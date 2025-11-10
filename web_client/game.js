@@ -452,21 +452,20 @@ class NetPongClient {
     
     render(data) {
         if (!data || !data.players || data.players.length < 2) {
-            console.warn('Render skipped: invalid data', data);
             return; // Don't render if no valid data
         }
         
         const ctx = this.ctx;
         const canvas = this.canvas;
         
-        // Performance optimization: Smart FPS throttling
+        // Simple FPS throttling - don't skip, just limit frequency
         const now = performance.now();
         const deltaTime = now - this.lastRenderTime;
         
-        // Target frame time based on device (but keep rendering continuously)
-        const targetFrameTime = this.isLowEnd ? 33.33 : 16.67; // 30 FPS low-end, 60 FPS high-end
-        if (deltaTime < targetFrameTime * 0.9) {
-            // Skip only if way too soon (90% of target time)
+        // Minimum time between renders (prevent excessive rendering)
+        const minFrameTime = this.isLowEnd ? 30 : 14; // ~33fps low-end, ~70fps high-end
+        if (deltaTime < minFrameTime) {
+            // Too soon, skip this render but loop will try again next frame
             return;
         }
         this.lastRenderTime = now;
@@ -591,15 +590,29 @@ class NetPongClient {
     startGameLoop() {
         // Start continuous render loop
         if (this.gameLoopId) {
+            console.log('Game loop already running');
             return; // Already running
         }
         
-        console.log('Starting game loop...');
+        console.log('🎮 Starting game loop... (Device:', this.isMobile ? 'Mobile' : 'Desktop', ', Low-end:', this.isLowEnd, ')');
+        
+        let frameCount = 0;
+        let lastFpsTime = performance.now();
         
         const loop = () => {
             // Render current game state if available
             if (this.gameState) {
                 this.render(this.gameState);
+                
+                // FPS counter (every 60 frames)
+                frameCount++;
+                if (frameCount >= 60) {
+                    const now = performance.now();
+                    const fps = Math.round(60000 / (now - lastFpsTime));
+                    console.log(`📊 FPS: ${fps}`);
+                    frameCount = 0;
+                    lastFpsTime = now;
+                }
             }
             
             // Continue loop
