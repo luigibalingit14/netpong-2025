@@ -373,10 +373,15 @@ class NetPongClient {
             return;
         }
         
-        console.log('📦 Game state updated:', {
-            ball: data.ball ? `(${Math.round(data.ball.x)}, ${Math.round(data.ball.y)})` : 'none',
-            players: data.players ? data.players.length : 0
-        });
+        // Log only occasionally to avoid console spam
+        if (!this.updateCount) this.updateCount = 0;
+        this.updateCount++;
+        if (this.updateCount % 60 === 0) {
+            console.log('📦 Game state update #' + this.updateCount + ':', {
+                ball: data.ball ? `(${Math.round(data.ball.x)}, ${Math.round(data.ball.y)})` : 'none',
+                players: data.players ? data.players.length : 0
+            });
+        }
         
         // Detect collisions by velocity changes (optimized)
         if (this.gameState && data.ball && this.soundManager.enabled) {
@@ -457,27 +462,14 @@ class NetPongClient {
     
     render(data) {
         if (!data || !data.players || data.players.length < 2) {
-            // Don't log every frame, just occasionally
-            if (Math.random() < 0.01) {
-                console.log('⏭️ Render skipped - waiting for valid data');
-            }
             return; // Don't render if no valid data
         }
         
         const ctx = this.ctx;
         const canvas = this.canvas;
         
-        // Simple FPS throttling - don't skip, just limit frequency
-        const now = performance.now();
-        const deltaTime = now - this.lastRenderTime;
-        
-        // Minimum time between renders (prevent excessive rendering)
-        const minFrameTime = this.isLowEnd ? 30 : 14; // ~33fps low-end, ~70fps high-end
-        if (deltaTime < minFrameTime) {
-            // Too soon, skip this render but loop will try again next frame
-            return;
-        }
-        this.lastRenderTime = now;
+        // NO THROTTLING - render every frame to ensure smooth animation
+        this.lastRenderTime = performance.now();
         
         // Clear canvas efficiently
         ctx.fillStyle = '#000';
