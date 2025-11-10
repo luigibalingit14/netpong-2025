@@ -69,6 +69,70 @@ class NetPongClient {
         // Keyboard input
         window.addEventListener('keydown', (e) => this.handleKeyDown(e));
         window.addEventListener('keyup', (e) => this.handleKeyUp(e));
+        
+        // Mobile touch controls
+        this.setupMobileControls();
+    }
+    
+    setupMobileControls() {
+        const upBtn = document.getElementById('mobile-up');
+        const downBtn = document.getElementById('mobile-down');
+        const mobileControls = document.getElementById('mobile-controls');
+        const controlsText = document.getElementById('controls-text');
+        
+        // Detect mobile device
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        
+        if (isMobile) {
+            controlsText.textContent = 'CONTROLS: Touch buttons to move';
+        }
+        
+        // Touch events for UP button
+        upBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            this.keys['ArrowUp'] = true;
+            this.updateInput();
+        });
+        
+        upBtn.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            this.keys['ArrowUp'] = false;
+            this.updateInput();
+        });
+        
+        // Touch events for DOWN button
+        downBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            this.keys['ArrowDown'] = true;
+            this.updateInput();
+        });
+        
+        downBtn.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            this.keys['ArrowDown'] = false;
+            this.updateInput();
+        });
+        
+        // Also support mouse events for testing on desktop
+        upBtn.addEventListener('mousedown', () => {
+            this.keys['ArrowUp'] = true;
+            this.updateInput();
+        });
+        
+        upBtn.addEventListener('mouseup', () => {
+            this.keys['ArrowUp'] = false;
+            this.updateInput();
+        });
+        
+        downBtn.addEventListener('mousedown', () => {
+            this.keys['ArrowDown'] = true;
+            this.updateInput();
+        });
+        
+        downBtn.addEventListener('mouseup', () => {
+            this.keys['ArrowDown'] = false;
+            this.updateInput();
+        });
     }
     
     // ===== WEBSOCKET =====

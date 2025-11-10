@@ -2,7 +2,10 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>NetPong 2025 - Retro Multiplayer Pong</title>
     <link rel="icon" type="image/x-icon" href="../assets/Netpong logo.ico">
     <link rel="stylesheet" href="style.css">
@@ -81,8 +84,14 @@
             
             <canvas id="game-canvas" width="800" height="600"></canvas>
             
+            <!-- Mobile Touch Controls -->
+            <div id="mobile-controls" class="mobile-controls hidden">
+                <button id="mobile-up" class="mobile-btn mobile-up">▲</button>
+                <button id="mobile-down" class="mobile-btn mobile-down">▼</button>
+            </div>
+            
             <div class="controls-hint">
-                <p>CONTROLS: Arrow Keys ↑↓ or W/S</p>
+                <p id="controls-text">CONTROLS: Arrow Keys ↑↓ or W/S</p>
             </div>
         </div>
         
