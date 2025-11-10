@@ -134,31 +134,47 @@ class NetPongClient {
             controlsText.textContent = 'CONTROLS: Touch buttons to move';
         }
         
-        // Touch events for UP button
+        // Touch events for UP button - with better mobile handling
         upBtn.addEventListener('touchstart', (e) => {
             e.preventDefault();
+            e.stopPropagation();
             this.keys['ArrowUp'] = true;
             this.updateInput();
-        });
+        }, { passive: false });
         
         upBtn.addEventListener('touchend', (e) => {
             e.preventDefault();
+            e.stopPropagation();
             this.keys['ArrowUp'] = false;
             this.updateInput();
-        });
+        }, { passive: false });
+        
+        upBtn.addEventListener('touchcancel', (e) => {
+            e.preventDefault();
+            this.keys['ArrowUp'] = false;
+            this.updateInput();
+        }, { passive: false });
         
         // Touch events for DOWN button
         downBtn.addEventListener('touchstart', (e) => {
             e.preventDefault();
+            e.stopPropagation();
             this.keys['ArrowDown'] = true;
             this.updateInput();
-        });
+        }, { passive: false });
         
         downBtn.addEventListener('touchend', (e) => {
             e.preventDefault();
+            e.stopPropagation();
             this.keys['ArrowDown'] = false;
             this.updateInput();
-        });
+        }, { passive: false });
+        
+        downBtn.addEventListener('touchcancel', (e) => {
+            e.preventDefault();
+            this.keys['ArrowDown'] = false;
+            this.updateInput();
+        }, { passive: false });
         
         // Also support mouse events for testing on desktop
         upBtn.addEventListener('mousedown', () => {
