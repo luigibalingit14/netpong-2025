@@ -3,6 +3,16 @@
 
 class NetPongClient {
     constructor() {
+        // Device detection - ONCE at startup
+        this.isMobile = this.detectMobile();
+        this.isLowEnd = this.detectLowEndDevice();
+        
+        console.log('Device Info:', { 
+            isMobile: this.isMobile, 
+            isLowEnd: this.isLowEnd,
+            userAgent: navigator.userAgent.substring(0, 50)
+        });
+        
         // WebSocket
         this.ws = null;
         this.serverUrl = window.NETPONG_CONFIG.WS_URL;
@@ -50,11 +60,25 @@ class NetPongClient {
     
     // ===== INITIALIZATION =====
     
+    detectMobile() {
+        // Multiple checks for mobile detection
+        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+               (window.innerWidth <= 768) ||
+               ('ontouchstart' in window);
+    }
+    
+    detectLowEndDevice() {
+        // Check for low-end device indicators
+        const cores = navigator.hardwareConcurrency || 2;
+        const memory = navigator.deviceMemory || 4;
+        
+        // Low-end if: less than 4 cores OR less than 4GB RAM OR mobile
+        return cores < 4 || memory < 4 || this.isMobile;
+    }
+    
     setupCanvas() {
         // Set canvas size based on device
-        const isMobile = /Android|webOS|iPhone|iPad|iPod/i.test(navigator.userAgent);
-        
-        if (isMobile) {
+        if (this.isMobile) {
             // Scale down for mobile
             const scale = Math.min(window.innerWidth / 800, window.innerHeight / 600);
             this.canvas.style.width = (800 * scale) + 'px';
@@ -127,11 +151,13 @@ class NetPongClient {
         const mobileControls = document.getElementById('mobile-controls');
         const controlsText = document.getElementById('controls-text');
         
-        // Detect mobile device
-        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        
-        if (isMobile) {
+        // Show mobile controls if mobile device
+        if (this.isMobile) {
+            mobileControls.style.display = 'flex';
             controlsText.textContent = 'CONTROLS: Touch buttons to move';
+        } else {
+            mobileControls.style.display = 'none';
+            controlsText.textContent = 'CONTROLS: Arrow keys ↑ ↓ to move';
         }
         
         // Touch events for UP button - with better mobile handling
@@ -415,21 +441,21 @@ class NetPongClient {
         const ctx = this.ctx;
         const canvas = this.canvas;
         
-        // Performance optimization: Use requestAnimationFrame throttling
+        // Performance optimization: Dynamic FPS throttling
         if (!this.lastRenderTime) this.lastRenderTime = 0;
         const now = performance.now();
         const deltaTime = now - this.lastRenderTime;
         
-        // Throttle to max 60 FPS on slower devices
-        if (deltaTime < 16.67) return;
+        // Throttle based on device capability
+        const targetFrameTime = this.isLowEnd ? 33.33 : 16.67; // 30 FPS low-end, 60 FPS high-end
+        if (deltaTime < targetFrameTime) return;
         this.lastRenderTime = now;
         
-        // Clear canvas (faster than fillRect for full clear)
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        // Clear canvas efficiently
         ctx.fillStyle = '#000';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
-        // Draw center line (simpler, no dashed line for performance)
+        // Draw center line (simpler on low-end)
         ctx.strokeStyle = 'rgba(0, 243, 255, 0.3)';
         ctx.lineWidth = 2;
         ctx.beginPath();
@@ -438,16 +464,21 @@ class NetPongClient {
         ctx.stroke();
         
         if (data.players.length >= 2) {
-            // Draw paddles (disable shadows on mobile for better performance)
+            // Draw paddles - NO shadows on low-end devices
             const paddleWidth = 20;
             const paddleHeight = 100;
             const paddleOffset = 30;
-            const isMobile = /Android|webOS|iPhone|iPad|iPod/i.test(navigator.userAgent);
+            
+            // Reset shadow for high-end devices
+            if (!this.isLowEnd) {
+                ctx.shadowBlur = 10;
+            } else {
+                ctx.shadowBlur = 0; // Disable shadows completely on low-end
+            }
             
             // Left paddle
             ctx.fillStyle = '#00f3ff';
-            if (!isMobile) {
-                ctx.shadowBlur = 10; // Reduced from 15
+            if (!this.isLowEnd) {
                 ctx.shadowColor = '#00f3ff';
             }
             ctx.fillRect(
@@ -459,7 +490,7 @@ class NetPongClient {
             
             // Right paddle
             ctx.fillStyle = '#ff00ff';
-            if (!isMobile) {
+            if (!this.isLowEnd) {
                 ctx.shadowColor = '#ff00ff';
             }
             ctx.fillRect(
@@ -471,8 +502,8 @@ class NetPongClient {
             
             // Draw ball
             ctx.fillStyle = '#fff';
-            if (!isMobile) {
-                ctx.shadowBlur = 15; // Reduced from 20
+            if (!this.isLowEnd) {
+                ctx.shadowBlur = 15;
                 ctx.shadowColor = '#fff';
             }
             ctx.beginPath();
