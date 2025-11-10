@@ -29,6 +29,7 @@ class NetPongClient {
         
         // Rendering state
         this.lastRenderTime = 0;
+        this.gameLoopId = null; // Track game loop animation frame
         
         // Canvas with hardware acceleration
         this.canvas = document.getElementById('game-canvas');
@@ -72,11 +73,12 @@ class NetPongClient {
     
     detectLowEndDevice() {
         // Check for low-end device indicators
-        const cores = navigator.hardwareConcurrency || 2;
-        const memory = navigator.deviceMemory || 4;
+        const cores = navigator.hardwareConcurrency || 4; // Default to 4 if unknown
+        const memory = navigator.deviceMemory || 8; // Default to 8GB if unknown
         
-        // Low-end if: less than 4 cores OR less than 4GB RAM OR mobile
-        return cores < 4 || memory < 4 || this.isMobile;
+        // Low-end if: less than 2 cores OR less than 2GB RAM OR mobile
+        // Most modern desktops should NOT be considered low-end
+        return cores < 2 || memory < 2 || this.isMobile;
     }
     
     setupCanvas() {
@@ -282,12 +284,14 @@ class NetPongClient {
                 this.roomCode = data.room_code;
                 this.showScreen('game');
                 this.startPingInterval();
+                this.startGameLoop(); // Start continuous rendering
                 break;
             
             case 'player_joined':
                 // Second player joined, start game
                 this.showScreen('game');
                 this.startPingInterval();
+                this.startGameLoop(); // Start continuous rendering
                 break;
             
             case 'game_state':
@@ -401,8 +405,8 @@ class NetPongClient {
         // Update HUD
         this.updateHUD(data);
         
-        // Render immediately (will handle its own throttling)
-        this.render(data);
+        // Game loop will handle rendering continuously
+        // No need to call render here anymore
     }
     
     updateHUD(data) {
@@ -448,20 +452,21 @@ class NetPongClient {
     
     render(data) {
         if (!data || !data.players || data.players.length < 2) {
+            console.warn('Render skipped: invalid data', data);
             return; // Don't render if no valid data
         }
         
         const ctx = this.ctx;
         const canvas = this.canvas;
         
-        // Performance optimization: Simple FPS throttling
+        // Performance optimization: Smart FPS throttling
         const now = performance.now();
         const deltaTime = now - this.lastRenderTime;
         
-        // Throttle based on device capability (but don't skip - just delay)
+        // Target frame time based on device (but keep rendering continuously)
         const targetFrameTime = this.isLowEnd ? 33.33 : 16.67; // 30 FPS low-end, 60 FPS high-end
-        if (deltaTime < targetFrameTime) {
-            // Too soon, skip this frame
+        if (deltaTime < targetFrameTime * 0.9) {
+            // Skip only if way too soon (90% of target time)
             return;
         }
         this.lastRenderTime = now;
@@ -581,6 +586,37 @@ class NetPongClient {
         }
     }
     
+    // ===== GAME LOOP =====
+    
+    startGameLoop() {
+        // Start continuous render loop
+        if (this.gameLoopId) {
+            return; // Already running
+        }
+        
+        console.log('Starting game loop...');
+        
+        const loop = () => {
+            // Render current game state if available
+            if (this.gameState) {
+                this.render(this.gameState);
+            }
+            
+            // Continue loop
+            this.gameLoopId = requestAnimationFrame(loop);
+        };
+        
+        this.gameLoopId = requestAnimationFrame(loop);
+    }
+    
+    stopGameLoop() {
+        if (this.gameLoopId) {
+            cancelAnimationFrame(this.gameLoopId);
+            this.gameLoopId = null;
+            console.log('Game loop stopped');
+        }
+    }
+    
     handlePong(data) {
         const now = Date.now();
         const latency = now - data.client_timestamp;
@@ -601,6 +637,7 @@ class NetPongClient {
     
     handleGameOver(data) {
         this.stopPingInterval();
+        this.stopGameLoop();
         
         const winnerText = document.getElementById('winner-text');
         winnerText.textContent = `${data.winner} WINS!`;
