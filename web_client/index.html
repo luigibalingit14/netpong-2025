@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NetPong 2025 - Retro Multiplayer Pong</title>
+    <link rel="icon" type="image/x-icon" href="../assets/Netpong logo.ico">
+    <link rel="stylesheet" href="style.css">
+    <script src="config.js"></script>
+</head>
+<body>
+    <div id="container">
+        <!-- Main Menu -->
+        <div id="menu-screen" class="screen active">
+            <div class="logo">
+                <h1 class="glitch" data-text="NETPONG">NETPONG</h1>
+                <p class="subtitle">2025 // RETRO MULTIPLAYER</p>
+                <p class="creator">Created by Luigi Balingit</p>
+            </div>
+            
+            <div class="menu-content">
+                <input type="text" id="player-name" placeholder="Enter your name" maxlength="20" class="input-field">
+                
+                <div class="button-group">
+                    <button id="create-room-btn" class="btn btn-primary">CREATE ROOM</button>
+                    <button id="join-room-btn" class="btn btn-secondary">JOIN ROOM</button>
+                    <button id="leaderboard-btn" class="btn btn-tertiary">LEADERBOARD</button>
+                </div>
+                
+                <div id="join-room-input" class="hidden">
+                    <input type="text" id="room-code-input" placeholder="ROOM CODE" maxlength="4" class="input-field">
+                    <button id="join-room-submit" class="btn btn-small">JOIN</button>
+                    <button id="join-room-cancel" class="btn btn-small">CANCEL</button>
+                </div>
+            </div>
+            
+            <div class="status-indicator">
+                <span id="connection-status">● OFFLINE</span>
+            </div>
+        </div>
+        
+        <!-- Waiting Room -->
+        <div id="waiting-screen" class="screen">
+            <div class="waiting-content">
+                <h2>WAITING FOR OPPONENT...</h2>
+                <div class="room-code-display">
+                    <p>ROOM CODE:</p>
+                    <div id="room-code" class="code">----</div>
+                </div>
+                <p class="instruction">Share this code with your friend!</p>
+                <div class="spinner"></div>
+                <button id="cancel-waiting-btn" class="btn btn-secondary">CANCEL</button>
+            </div>
+        </div>
+        
+        <!-- Game Screen -->
+        <div id="game-screen" class="screen">
+            <div class="game-hud">
+                <div class="player-info left">
+                    <span id="player1-name" class="player-name">PLAYER 1</span>
+                    <span id="player1-score" class="score">0</span>
+                    <div class="latency-indicator">
+                        <span id="player1-ping" class="ping">0ms</span>
+                        <div id="player1-latency-bar" class="latency-bar"></div>
+                    </div>
+                </div>
+                
+                <div class="center-info">
+                    <div id="countdown" class="countdown hidden">3</div>
+                </div>
+                
+                <div class="player-info right">
+                    <span id="player2-name" class="player-name">PLAYER 2</span>
+                    <span id="player2-score" class="score">0</span>
+                    <div class="latency-indicator">
+                        <span id="player2-ping" class="ping">0ms</span>
+                        <div id="player2-latency-bar" class="latency-bar"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <canvas id="game-canvas" width="800" height="600"></canvas>
+            
+            <div class="controls-hint">
+                <p>CONTROLS: Arrow Keys ↑↓ or W/S</p>
+            </div>
+        </div>
+        
+        <!-- Game Over Screen -->
+        <div id="gameover-screen" class="screen">
+            <div class="gameover-content">
+                <h2 id="winner-text" class="glitch" data-text="PLAYER WINS!">PLAYER WINS!</h2>
+                <div id="final-scores" class="final-scores"></div>
+                <button id="play-again-btn" class="btn btn-primary">PLAY AGAIN</button>
+                <button id="main-menu-btn" class="btn btn-secondary">MAIN MENU</button>
+            </div>
+        </div>
+        
+        <!-- Leaderboard Screen -->
+        <div id="leaderboard-screen" class="screen">
+            <div class="leaderboard-content">
+                <h2>TOP PLAYERS</h2>
+                <div id="leaderboard-table" class="leaderboard-table">
+                    <div class="loading">Loading...</div>
+                </div>
+                <button id="leaderboard-back-btn" class="btn btn-secondary">BACK</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="game.js"></script>
+</body>
+</html>

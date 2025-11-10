@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NetPong 2025 - Launcher</title>
+    <link rel="icon" type="image/x-icon" href="assets/Netpong logo.ico">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 100%);
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        
+        .container {
+            max-width: 800px;
+            background: rgba(26, 26, 46, 0.9);
+            padding: 3rem;
+            border-radius: 10px;
+            border: 2px solid #00f3ff;
+            box-shadow: 0 0 30px rgba(0, 243, 255, 0.3);
+        }
+        
+        h1 {
+            font-size: 3rem;
+            color: #00f3ff;
+            text-align: center;
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.3rem;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #a0a0a0;
+            margin-bottom: 2rem;
+            letter-spacing: 0.2rem;
+        }
+        
+        .status {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 1rem;
+            border-radius: 5px;
+            margin-bottom: 2rem;
+            border-left: 4px solid #39ff14;
+        }
+        
+        .status.error {
+            border-left-color: #ff0000;
+        }
+        
+        .status h3 {
+            color: #39ff14;
+            margin-bottom: 0.5rem;
+        }
+        
+        .status.error h3 {
+            color: #ff0000;
+        }
+        
+        .status p {
+            color: #a0a0a0;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+        
+        .buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+        
+        .btn {
+            padding: 1rem 2rem;
+            font-size: 1rem;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            text-transform: uppercase;
+            border: 2px solid #00f3ff;
+            background: transparent;
+            color: #ffffff;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        
+        .btn:hover {
+            background: #00f3ff;
+            color: #0a0a0f;
+            box-shadow: 0 0 20px rgba(0, 243, 255, 0.5);
+        }
+        
+        .btn-secondary {
+            border-color: #ff00ff;
+        }
+        
+        .btn-secondary:hover {
+            background: #ff00ff;
+        }
+        
+        .btn-success {
+            border-color: #39ff14;
+        }
+        
+        .btn-success:hover {
+            background: #39ff14;
+        }
+        
+        .instructions {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 1.5rem;
+            border-radius: 5px;
+            margin-top: 2rem;
+        }
+        
+        .instructions h3 {
+            color: #00f3ff;
+            margin-bottom: 1rem;
+        }
+        
+        .instructions ol {
+            margin-left: 1.5rem;
+            color: #a0a0a0;
+        }
+        
+        .instructions li {
+            margin-bottom: 0.5rem;
+            line-height: 1.6;
+        }
+        
+        .instructions code {
+            background: rgba(0, 243, 255, 0.1);
+            padding: 0.2rem 0.5rem;
+            border-radius: 3px;
+            color: #00f3ff;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 2rem;
+            color: #a0a0a0;
+            font-size: 0.9rem;
+        }
+        
+        .indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 0.5rem;
+            animation: pulse 2s infinite;
+        }
+        
+        .indicator.online {
+            background: #39ff14;
+        }
+        
+        .indicator.offline {
+            background: #ff0000;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 NETPONG</h1>
+        <p class="subtitle">2025 // MULTIPLAYER LAUNCHER</p>
+        
+        <div id="server-status" class="status">
+            <h3><span class="indicator offline"></span>Checking Server...</h3>
+            <p>Attempting to connect to http://localhost:8000</p>
+        </div>
+        
+        <div class="buttons">
+            <a href="web_client/index.html" class="btn" id="player1-btn">
+                🎮 Launch Player 1
+            </a>
+            <a href="web_client/index.html" class="btn btn-secondary" id="player2-btn">
+                🎮 Launch Player 2
+            </a>
+            <a href="http://localhost:8000/docs" class="btn btn-success" target="_blank">
+                📚 API Docs
+            </a>
+            <a href="http://localhost:8000/leaderboard" class="btn btn-success" target="_blank">
+                🏆 Leaderboard API
+            </a>
+        </div>
+        
+        <div class="instructions">
+            <h3>🚀 Quick Start</h3>
+            <ol>
+                <li>Start the server in a terminal:
+                    <br><code>cd server && python main.py</code>
+                </li>
+                <li>Wait for "🚀 NetPong server ready" message above</li>
+                <li>Click "Launch Player 1" and "Launch Player 2"</li>
+                <li>Player 1: Create room, share code</li>
+                <li>Player 2: Join room with code</li>
+                <li>Play! Use Arrow Keys or W/S to move paddles</li>
+            </ol>
+        </div>
+        
+        <div class="footer">
+            <p>Built with ❤️ by Luigi Balingit (2025)</p>
+            <p style="margin-top: 0.5rem;">FastAPI • WebSocket • Canvas • PyGame</p>
+        </div>
+    </div>
+    
+    <script>
+        // Check server status
+        async function checkServer() {
+            const statusDiv = document.getElementById('server-status');
+            
+            try {
+                const response = await fetch('http://localhost:8000/');
+                const data = await response.json();
+                
+                if (data.status === 'online') {
+                    statusDiv.className = 'status';
+                    statusDiv.innerHTML = `
+                        <h3><span class="indicator online"></span>Server Online</h3>
+                        <p>✅ ${data.name} v${data.version} is ready!</p>
+                        <p style="margin-top: 0.5rem;">WebSocket: ws://localhost:8000/ws</p>
+                    `;
+                    
+                    // Enable buttons
+                    document.getElementById('player1-btn').style.opacity = '1';
+                    document.getElementById('player2-btn').style.opacity = '1';
+                }
+            } catch (error) {
+                statusDiv.className = 'status error';
+                statusDiv.innerHTML = `
+                    <h3><span class="indicator offline"></span>Server Offline</h3>
+                    <p>❌ Could not connect to http://localhost:8000</p>
+                    <p style="margin-top: 0.5rem;">
+                        Please start the server:<br>
+                        <code>cd server && python main.py</code>
+                    </p>
+                `;
+                
+                // Disable buttons (visual only)
+                document.getElementById('player1-btn').style.opacity = '0.5';
+                document.getElementById('player2-btn').style.opacity = '0.5';
+                
+                // Retry after 3 seconds
+                setTimeout(checkServer, 3000);
+            }
+        }
+        
+        // Check on load
+        checkServer();
+        
+        // Recheck every 5 seconds
+        setInterval(checkServer, 5000);
+    </script>
+</body>
+</html>
