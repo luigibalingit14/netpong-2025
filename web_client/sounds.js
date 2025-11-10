@@ -141,6 +141,80 @@ class SoundManager {
         });
     }
     
+    // Welcome/Intro sound - retro startup
+    playIntro() {
+        if (!this.enabled || !this.initialized) return;
+        
+        const introMelody = [
+            { freq: 261.63, duration: 0.15 }, // C4
+            { freq: 329.63, duration: 0.15 }, // E4
+            { freq: 392.00, duration: 0.15 }, // G4
+            { freq: 523.25, duration: 0.15 }, // C5
+            { freq: 659.25, duration: 0.3 },  // E5 (longer)
+            { freq: 523.25, duration: 0.3 }   // C5 (longer)
+        ];
+        
+        let time = this.audioContext.currentTime + 0.1;
+        introMelody.forEach(note => {
+            const oscillator = this.audioContext.createOscillator();
+            const gainNode = this.audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(this.audioContext.destination);
+            
+            oscillator.frequency.value = note.freq;
+            oscillator.type = 'square'; // Retro square wave
+            
+            gainNode.gain.setValueAtTime(this.volume * 0.6, time);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, time + note.duration);
+            
+            oscillator.start(time);
+            oscillator.stop(time + note.duration);
+            
+            time += note.duration;
+        });
+    }
+    
+    // Menu button click sound
+    playMenuClick() {
+        if (!this.enabled || !this.initialized) return;
+        
+        const oscillator = this.audioContext.createOscillator();
+        const gainNode = this.audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(this.audioContext.destination);
+        
+        oscillator.frequency.value = 800;
+        oscillator.type = 'square';
+        
+        gainNode.gain.setValueAtTime(this.volume * 0.4, this.audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.08);
+        
+        oscillator.start(this.audioContext.currentTime);
+        oscillator.stop(this.audioContext.currentTime + 0.08);
+    }
+    
+    // Menu hover sound (subtle)
+    playMenuHover() {
+        if (!this.enabled || !this.initialized) return;
+        
+        const oscillator = this.audioContext.createOscillator();
+        const gainNode = this.audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(this.audioContext.destination);
+        
+        oscillator.frequency.value = 600;
+        oscillator.type = 'sine';
+        
+        gainNode.gain.setValueAtTime(this.volume * 0.2, this.audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.05);
+        
+        oscillator.start(this.audioContext.currentTime);
+        oscillator.stop(this.audioContext.currentTime + 0.05);
+    }
+    
     // Toggle sound on/off
     toggle() {
         this.enabled = !this.enabled;

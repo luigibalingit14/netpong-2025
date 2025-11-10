@@ -100,14 +100,42 @@ class NetPongClient {
     }
     
     initUI() {
-        // Menu buttons
-        document.getElementById('create-room-btn').addEventListener('click', () => this.createRoom());
-        document.getElementById('join-room-btn').addEventListener('click', () => this.showJoinInput());
-        document.getElementById('leaderboard-btn').addEventListener('click', () => this.showLeaderboard());
+        // Play intro sound on first interaction
+        let introPlayed = false;
+        const playIntroOnce = () => {
+            if (!introPlayed) {
+                this.soundManager.init();
+                this.soundManager.playIntro();
+                introPlayed = true;
+            }
+        };
         
-        // Join room input
-        document.getElementById('join-room-submit').addEventListener('click', () => this.joinRoom());
-        document.getElementById('join-room-cancel').addEventListener('click', () => this.hideJoinInput());
+        // Menu buttons with sounds
+        document.getElementById('create-room-btn').addEventListener('click', () => {
+            playIntroOnce();
+            this.soundManager.playMenuClick();
+            this.createRoom();
+        });
+        document.getElementById('join-room-btn').addEventListener('click', () => {
+            playIntroOnce();
+            this.soundManager.playMenuClick();
+            this.showJoinInput();
+        });
+        document.getElementById('leaderboard-btn').addEventListener('click', () => {
+            playIntroOnce();
+            this.soundManager.playMenuClick();
+            this.showLeaderboard();
+        });
+        
+        // Join room input with sounds
+        document.getElementById('join-room-submit').addEventListener('click', () => {
+            this.soundManager.playMenuClick();
+            this.joinRoom();
+        });
+        document.getElementById('join-room-cancel').addEventListener('click', () => {
+            this.soundManager.playMenuClick();
+            this.hideJoinInput();
+        });
         
         // Room code input - auto uppercase
         const roomCodeInput = document.getElementById('room-code-input');
@@ -115,18 +143,39 @@ class NetPongClient {
             e.target.value = e.target.value.toUpperCase();
         });
         
-        // Waiting screen
-        document.getElementById('cancel-waiting-btn').addEventListener('click', () => this.cancelWaiting());
+        // Waiting screen with sound
+        document.getElementById('cancel-waiting-btn').addEventListener('click', () => {
+            this.soundManager.playMenuClick();
+            this.cancelWaiting();
+        });
         
-        // Game over screen
-        document.getElementById('play-again-btn').addEventListener('click', () => this.playAgain());
-        document.getElementById('main-menu-btn').addEventListener('click', () => this.showScreen('menu'));
+        // Game over screen with sounds
+        document.getElementById('play-again-btn').addEventListener('click', () => {
+            this.soundManager.playMenuClick();
+            this.playAgain();
+        });
+        document.getElementById('main-menu-btn').addEventListener('click', () => {
+            this.soundManager.playMenuClick();
+            this.showScreen('menu');
+        });
         
-        // Leaderboard
-        document.getElementById('leaderboard-back-btn').addEventListener('click', () => this.showScreen('menu'));
+        // Leaderboard with sound
+        document.getElementById('leaderboard-back-btn').addEventListener('click', () => {
+            this.soundManager.playMenuClick();
+            this.showScreen('menu');
+        });
         
         // Sound toggle
         document.getElementById('sound-toggle').addEventListener('click', () => this.toggleSound());
+        
+        // Add hover sounds to all buttons
+        document.querySelectorAll('.btn').forEach(btn => {
+            btn.addEventListener('mouseenter', () => {
+                if (this.soundManager.initialized) {
+                    this.soundManager.playMenuHover();
+                }
+            });
+        });
         
         // Keyboard input
         window.addEventListener('keydown', (e) => this.handleKeyDown(e));
