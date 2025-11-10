@@ -369,9 +369,14 @@ class NetPongClient {
     updateGameState(data) {
         // Validate data
         if (!data) {
-            console.warn('No game state data received');
+            console.warn('❌ No game state data received');
             return;
         }
+        
+        console.log('📦 Game state updated:', {
+            ball: data.ball ? `(${Math.round(data.ball.x)}, ${Math.round(data.ball.y)})` : 'none',
+            players: data.players ? data.players.length : 0
+        });
         
         // Detect collisions by velocity changes (optimized)
         if (this.gameState && data.ball && this.soundManager.enabled) {
@@ -452,6 +457,10 @@ class NetPongClient {
     
     render(data) {
         if (!data || !data.players || data.players.length < 2) {
+            // Don't log every frame, just occasionally
+            if (Math.random() < 0.01) {
+                console.log('⏭️ Render skipped - waiting for valid data');
+            }
             return; // Don't render if no valid data
         }
         
@@ -590,28 +599,38 @@ class NetPongClient {
     startGameLoop() {
         // Start continuous render loop
         if (this.gameLoopId) {
-            console.log('Game loop already running');
+            console.log('⚠️ Game loop already running');
             return; // Already running
         }
         
         console.log('🎮 Starting game loop... (Device:', this.isMobile ? 'Mobile' : 'Desktop', ', Low-end:', this.isLowEnd, ')');
+        console.log('Canvas size:', this.canvas.width, 'x', this.canvas.height);
         
         let frameCount = 0;
         let lastFpsTime = performance.now();
+        let renderCount = 0;
         
         const loop = () => {
+            frameCount++;
+            
             // Render current game state if available
             if (this.gameState) {
                 this.render(this.gameState);
+                renderCount++;
                 
                 // FPS counter (every 60 frames)
-                frameCount++;
                 if (frameCount >= 60) {
                     const now = performance.now();
                     const fps = Math.round(60000 / (now - lastFpsTime));
-                    console.log(`📊 FPS: ${fps}`);
+                    console.log(`📊 Loop FPS: ${fps} | Renders: ${renderCount} | Game state: ${this.gameState ? 'OK' : 'NULL'}`);
                     frameCount = 0;
+                    renderCount = 0;
                     lastFpsTime = now;
+                }
+            } else {
+                // Log if no game state
+                if (frameCount % 60 === 0) {
+                    console.warn('⚠️ Game loop running but no game state yet');
                 }
             }
             
