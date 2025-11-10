@@ -247,6 +247,9 @@ body {
     top: 20px;
     right: 20px;
     font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 15px;
 }
 
 #connection-status {
@@ -255,6 +258,31 @@ body {
 
 #connection-status.connected {
     color: var(--neon-green);
+}
+
+.sound-btn {
+    background: transparent;
+    border: 2px solid var(--neon-blue);
+    color: var(--neon-blue);
+    font-size: 1.2rem;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sound-btn:hover {
+    background: rgba(0, 243, 255, 0.2);
+    box-shadow: 0 0 15px rgba(0, 243, 255, 0.5);
+}
+
+.sound-btn.muted {
+    color: var(--text-secondary);
+    border-color: var(--text-secondary);
 }
 
 /* Waiting Screen */

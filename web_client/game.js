@@ -9,9 +9,13 @@ class NetPongClient {
         this.playerId = null;
         this.roomCode = null;
         
+        // Sound
+        this.soundManager = new window.SoundManager();
+        
         // Game state
         this.gameState = null;
         this.playerIndex = -1; // Which player are we (0 or 1)
+        this.lastBallVelocity = { x: 0, y: 0 }; // Track ball velocity for collision sounds
         
         // Canvas
         this.canvas = document.getElementById('game-canvas');
@@ -66,12 +70,29 @@ class NetPongClient {
         // Leaderboard
         document.getElementById('leaderboard-back-btn').addEventListener('click', () => this.showScreen('menu'));
         
+        // Sound toggle
+        document.getElementById('sound-toggle').addEventListener('click', () => this.toggleSound());
+        
         // Keyboard input
         window.addEventListener('keydown', (e) => this.handleKeyDown(e));
         window.addEventListener('keyup', (e) => this.handleKeyUp(e));
         
         // Mobile touch controls
         this.setupMobileControls();
+        
+        // Initialize sound on first user interaction
+        document.addEventListener('click', () => {
+            if (!this.soundManager.initialized) {
+                this.soundManager.init();
+            }
+        }, { once: true });
+    }
+    
+    toggleSound() {
+        const enabled = this.soundManager.toggle();
+        const btn = document.getElementById('sound-toggle');
+        btn.textContent = enabled ? '🔊' : '🔇';
+        btn.classList.toggle('muted', !enabled);
     }
     
     setupMobileControls() {
@@ -207,11 +228,12 @@ class NetPongClient {
                 break;
             
             case 'score_event':
-                this.playScoreSound();
+                this.soundManager.playScore();
                 break;
             
             case 'game_over':
                 this.handleGameOver(data);
+                this.soundManager.playVictory();
                 break;
             
             case 'player_disconnected':
@@ -270,6 +292,25 @@ class NetPongClient {
     // ===== GAME LOGIC =====
     
     updateGameState(data) {
+        // Detect collisions by velocity changes
+        if (this.gameState && data.ball) {
+            const oldVelX = this.lastBallVelocity.x;
+            const oldVelY = this.lastBallVelocity.y;
+            const newVelX = data.ball.velocity.x;
+            const newVelY = data.ball.velocity.y;
+            
+            // Paddle hit (X velocity changed)
+            if (Math.sign(oldVelX) !== Math.sign(newVelX) && oldVelX !== 0) {
+                this.soundManager.playPaddleHit();
+            }
+            // Wall hit (Y velocity changed)
+            else if (Math.sign(oldVelY) !== Math.sign(newVelY) && oldVelY !== 0) {
+                this.soundManager.playWallHit();
+            }
+            
+            this.lastBallVelocity = { x: newVelX, y: newVelY };
+        }
+        
         this.gameState = data;
         
         // Determine our player index
