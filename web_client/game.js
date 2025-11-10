@@ -17,9 +17,15 @@ class NetPongClient {
         this.playerIndex = -1; // Which player are we (0 or 1)
         this.lastBallVelocity = { x: 0, y: 0 }; // Track ball velocity for collision sounds
         
-        // Canvas
+        // Canvas with hardware acceleration
         this.canvas = document.getElementById('game-canvas');
-        this.ctx = this.canvas.getContext('2d');
+        this.ctx = this.canvas.getContext('2d', { 
+            alpha: false,  // Disable transparency for better performance
+            desynchronized: true  // Reduce latency
+        });
+        
+        // Optimize canvas for mobile
+        this.setupCanvas();
         
         // Input
         this.keys = {};
@@ -43,6 +49,26 @@ class NetPongClient {
     }
     
     // ===== INITIALIZATION =====
+    
+    setupCanvas() {
+        // Set canvas size based on device
+        const isMobile = /Android|webOS|iPhone|iPad|iPod/i.test(navigator.userAgent);
+        
+        if (isMobile) {
+            // Scale down for mobile
+            const scale = Math.min(window.innerWidth / 800, window.innerHeight / 600);
+            this.canvas.style.width = (800 * scale) + 'px';
+            this.canvas.style.height = (600 * scale) + 'px';
+        }
+        
+        // Enable hardware acceleration
+        this.canvas.style.transform = 'translateZ(0)';
+        this.canvas.style.backfaceVisibility = 'hidden';
+        this.canvas.style.perspective = '1000px';
+        
+        // Image smoothing off for crisp pixels
+        this.ctx.imageSmoothingEnabled = false;
+    }
     
     initUI() {
         // Menu buttons
@@ -292,20 +318,23 @@ class NetPongClient {
     // ===== GAME LOGIC =====
     
     updateGameState(data) {
-        // Detect collisions by velocity changes
-        if (this.gameState && data.ball) {
+        // Detect collisions by velocity changes (optimized)
+        if (this.gameState && data.ball && this.soundManager.enabled) {
             const oldVelX = this.lastBallVelocity.x;
             const oldVelY = this.lastBallVelocity.y;
             const newVelX = data.ball.velocity.x;
             const newVelY = data.ball.velocity.y;
             
-            // Paddle hit (X velocity changed)
-            if (Math.sign(oldVelX) !== Math.sign(newVelX) && oldVelX !== 0) {
-                this.soundManager.playPaddleHit();
-            }
-            // Wall hit (Y velocity changed)
-            else if (Math.sign(oldVelY) !== Math.sign(newVelY) && oldVelY !== 0) {
-                this.soundManager.playWallHit();
+            // Only check if velocity actually changed (avoid unnecessary comparisons)
+            if (oldVelX !== newVelX || oldVelY !== newVelY) {
+                // Paddle hit (X velocity changed)
+                if (Math.sign(oldVelX) !== Math.sign(newVelX) && oldVelX !== 0) {
+                    this.soundManager.playPaddleHit();
+                }
+                // Wall hit (Y velocity changed)
+                else if (Math.sign(oldVelY) !== Math.sign(newVelY) && oldVelY !== 0) {
+                    this.soundManager.playWallHit();
+                }
             }
             
             this.lastBallVelocity = { x: newVelX, y: newVelY };
@@ -370,30 +399,41 @@ class NetPongClient {
         const ctx = this.ctx;
         const canvas = this.canvas;
         
-        // Clear canvas
+        // Performance optimization: Use requestAnimationFrame throttling
+        if (!this.lastRenderTime) this.lastRenderTime = 0;
+        const now = performance.now();
+        const deltaTime = now - this.lastRenderTime;
+        
+        // Throttle to max 60 FPS on slower devices
+        if (deltaTime < 16.67) return;
+        this.lastRenderTime = now;
+        
+        // Clear canvas (faster than fillRect for full clear)
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.fillStyle = '#000';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
-        // Draw center line
+        // Draw center line (simpler, no dashed line for performance)
         ctx.strokeStyle = 'rgba(0, 243, 255, 0.3)';
         ctx.lineWidth = 2;
-        ctx.setLineDash([10, 10]);
         ctx.beginPath();
         ctx.moveTo(canvas.width / 2, 0);
         ctx.lineTo(canvas.width / 2, canvas.height);
         ctx.stroke();
-        ctx.setLineDash([]);
         
         if (data.players.length >= 2) {
-            // Draw paddles
+            // Draw paddles (disable shadows on mobile for better performance)
             const paddleWidth = 20;
             const paddleHeight = 100;
             const paddleOffset = 30;
+            const isMobile = /Android|webOS|iPhone|iPad|iPod/i.test(navigator.userAgent);
             
             // Left paddle
             ctx.fillStyle = '#00f3ff';
-            ctx.shadowBlur = 15;
-            ctx.shadowColor = '#00f3ff';
+            if (!isMobile) {
+                ctx.shadowBlur = 10; // Reduced from 15
+                ctx.shadowColor = '#00f3ff';
+            }
             ctx.fillRect(
                 paddleOffset,
                 data.players[0].paddle_y - paddleHeight / 2,
@@ -403,7 +443,9 @@ class NetPongClient {
             
             // Right paddle
             ctx.fillStyle = '#ff00ff';
-            ctx.shadowColor = '#ff00ff';
+            if (!isMobile) {
+                ctx.shadowColor = '#ff00ff';
+            }
             ctx.fillRect(
                 canvas.width - paddleOffset - paddleWidth,
                 data.players[1].paddle_y - paddleHeight / 2,
@@ -413,8 +455,10 @@ class NetPongClient {
             
             // Draw ball
             ctx.fillStyle = '#fff';
-            ctx.shadowBlur = 20;
-            ctx.shadowColor = '#fff';
+            if (!isMobile) {
+                ctx.shadowBlur = 15; // Reduced from 20
+                ctx.shadowColor = '#fff';
+            }
             ctx.beginPath();
             ctx.arc(data.ball.x, data.ball.y, 10, 0, Math.PI * 2);
             ctx.fill();
