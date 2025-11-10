@@ -591,30 +591,42 @@ class NetPongClient {
     startGameLoop() {
         // Start continuous render loop
         if (this.gameLoopId) {
-            console.log('⚠️ Game loop already running');
+            console.log('⚠️ Game loop already running, ID:', this.gameLoopId);
             return; // Already running
         }
         
         console.log('🎮 Starting game loop... (Device:', this.isMobile ? 'Mobile' : 'Desktop', ', Low-end:', this.isLowEnd, ')');
         console.log('Canvas size:', this.canvas.width, 'x', this.canvas.height);
+        console.log('Initial game state:', this.gameState);
         
         let frameCount = 0;
         let lastFpsTime = performance.now();
         let renderCount = 0;
+        let loopCallCount = 0;
         
         const loop = () => {
+            loopCallCount++;
             frameCount++;
+            
+            // Debug: Log every frame for first 10 frames
+            if (loopCallCount <= 10) {
+                console.log(`🔄 Loop call #${loopCallCount}, game state:`, this.gameState ? 'EXISTS' : 'NULL');
+            }
             
             // Render current game state if available
             if (this.gameState) {
-                this.render(this.gameState);
-                renderCount++;
+                try {
+                    this.render(this.gameState);
+                    renderCount++;
+                } catch (error) {
+                    console.error('❌ Render error:', error);
+                }
                 
                 // FPS counter (every 60 frames)
                 if (frameCount >= 60) {
                     const now = performance.now();
                     const fps = Math.round(60000 / (now - lastFpsTime));
-                    console.log(`📊 Loop FPS: ${fps} | Renders: ${renderCount} | Game state: ${this.gameState ? 'OK' : 'NULL'}`);
+                    console.log(`📊 Loop FPS: ${fps} | Renders: ${renderCount} | Ball: (${Math.round(this.gameState.ball.x)}, ${Math.round(this.gameState.ball.y)})`);
                     frameCount = 0;
                     renderCount = 0;
                     lastFpsTime = now;
@@ -622,7 +634,7 @@ class NetPongClient {
             } else {
                 // Log if no game state
                 if (frameCount % 60 === 0) {
-                    console.warn('⚠️ Game loop running but no game state yet');
+                    console.warn('⚠️ Game loop running but no game state yet, frame:', frameCount);
                 }
             }
             
@@ -631,6 +643,7 @@ class NetPongClient {
         };
         
         this.gameLoopId = requestAnimationFrame(loop);
+        console.log('✅ Game loop started with ID:', this.gameLoopId);
     }
     
     stopGameLoop() {
