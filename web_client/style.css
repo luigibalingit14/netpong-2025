@@ -252,13 +252,14 @@ body {
 }
 
 .status-indicator {
-    position: absolute;
+    position: fixed;
     top: 20px;
     right: 20px;
     font-size: 0.9rem;
     display: flex;
     align-items: center;
     gap: 15px;
+    z-index: 1000;
 }
 
 #connection-status {
@@ -615,28 +616,36 @@ body {
     
     /* Status indicator and sound button for mobile */
     .status-indicator {
+        position: fixed !important;
         top: 10px;
         right: 10px;
         gap: 8px;
         flex-direction: column;
         align-items: flex-end;
+        z-index: 9999;
     }
     
     .sound-btn {
-        width: 50px;
-        height: 50px;
-        font-size: 1.5rem;
+        width: 60px;
+        height: 60px;
+        font-size: 1.8rem;
         border-width: 3px;
-        box-shadow: 0 0 10px rgba(0, 243, 255, 0.3);
+        box-shadow: 0 0 20px rgba(0, 243, 255, 0.6);
+        background: rgba(0, 0, 0, 0.7);
     }
     
+    .sound-btn:hover,
     .sound-btn:active {
         transform: scale(0.95);
-        background: rgba(0, 243, 255, 0.3);
+        background: rgba(0, 243, 255, 0.4);
+        box-shadow: 0 0 25px rgba(0, 243, 255, 0.8);
     }
     
     #connection-status {
-        font-size: 0.75rem;
+        font-size: 0.7rem;
+        background: rgba(0, 0, 0, 0.7);
+        padding: 0.3rem 0.5rem;
+        border-radius: 4px;
     }
     
     /* Compact leaderboard for small screens */
