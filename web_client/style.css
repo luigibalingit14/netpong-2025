@@ -518,20 +518,32 @@ body {
     }
     
     /* Leaderboard adjustments */
+    .leaderboard-content {
+        width: 100%;
+        max-width: 100%;
+        padding: 0 1rem;
+    }
+    
     .leaderboard-table {
-        padding: 0.5rem;
+        padding: 0.75rem;
         margin: 1rem 0;
         max-height: 70vh;
-        font-size: 0.9rem;
+        font-size: 0.85rem;
+        width: 100%;
     }
     
     .leaderboard-entry {
         padding: 0.75rem 0.5rem;
+        gap: 8px;
     }
     
     .rank {
         min-width: 35px;
         font-size: 1rem;
+    }
+    
+    .player-stats strong {
+        font-size: 0.9rem;
     }
     
     .stat {
@@ -589,23 +601,58 @@ body {
     }
     
     /* Compact leaderboard for small screens */
+    .leaderboard-content {
+        width: 100%;
+        max-width: 100%;
+        padding: 0 0.5rem;
+    }
+    
     .leaderboard-table {
-        padding: 0.25rem;
-        font-size: 0.75rem;
-        max-height: 65vh;
+        padding: 0.5rem;
+        font-size: 0.7rem;
+        max-height: 60vh;
+        margin: 1rem 0;
+        border-radius: 8px;
     }
     
     .leaderboard-entry {
-        padding: 0.5rem 0.25rem;
+        padding: 0.6rem 0.3rem;
+        gap: 6px;
+        flex-wrap: nowrap;
     }
     
     .rank {
-        min-width: 25px;
+        min-width: 28px;
+        font-size: 0.9rem;
+        flex-shrink: 0;
+    }
+    
+    .player-stats {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+    }
+    
+    .player-stats strong {
         font-size: 0.85rem;
+        display: block;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin-bottom: 0.2rem;
     }
     
     .stat {
         font-size: 0.65rem;
+        display: inline-block;
+        margin-right: 0.5rem;
+        white-space: nowrap;
+    }
+    
+    /* Leaderboard header */
+    .leaderboard-content h2 {
+        font-size: 1.5rem;
+        margin-bottom: 0.5rem;
     }
 }
 
@@ -621,7 +668,9 @@ body {
 
 /* Leaderboard Screen */
 .leaderboard-content {
-    width: 600px;
+    width: 100%;
+    max-width: 600px;
+    padding: 0 1rem;
 }
 
 .leaderboard-table {
@@ -632,6 +681,7 @@ body {
     margin: 2rem 0;
     max-height: 500px;
     overflow-y: auto;
+    overflow-x: hidden;
     width: 100%;
     max-width: 600px;
 }
