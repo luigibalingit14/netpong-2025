@@ -387,8 +387,9 @@ class NetPongClient {
         if (this.gameState && data.ball && this.soundManager.enabled) {
             const oldVelX = this.lastBallVelocity.x;
             const oldVelY = this.lastBallVelocity.y;
-            const newVelX = data.ball.velocity.x;
-            const newVelY = data.ball.velocity.y;
+            // Server sends vx, vy not velocity.x, velocity.y
+            const newVelX = data.ball.vx || (data.ball.velocity && data.ball.velocity.x) || 0;
+            const newVelY = data.ball.vy || (data.ball.velocity && data.ball.velocity.y) || 0;
             
             // Only check if velocity actually changed (avoid unnecessary comparisons)
             if (oldVelX !== newVelX || oldVelY !== newVelY) {
