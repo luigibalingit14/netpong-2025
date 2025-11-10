@@ -28,7 +28,6 @@ class NetPongClient {
         this.lastBallVelocity = { x: 0, y: 0 }; // Track ball velocity for collision sounds
         
         // Rendering state
-        this.renderScheduled = false;
         this.lastRenderTime = 0;
         
         // Canvas with hardware acceleration
@@ -364,6 +363,12 @@ class NetPongClient {
     // ===== GAME LOGIC =====
     
     updateGameState(data) {
+        // Validate data
+        if (!data) {
+            console.warn('No game state data received');
+            return;
+        }
+        
         // Detect collisions by velocity changes (optimized)
         if (this.gameState && data.ball && this.soundManager.enabled) {
             const oldVelX = this.lastBallVelocity.x;
@@ -396,14 +401,8 @@ class NetPongClient {
         // Update HUD
         this.updateHUD(data);
         
-        // Schedule render using requestAnimationFrame
-        if (!this.renderScheduled) {
-            this.renderScheduled = true;
-            requestAnimationFrame(() => {
-                this.render(data);
-                this.renderScheduled = false;
-            });
-        }
+        // Render immediately (will handle its own throttling)
+        this.render(data);
     }
     
     updateHUD(data) {
@@ -448,17 +447,21 @@ class NetPongClient {
     }
     
     render(data) {
+        if (!data || !data.players || data.players.length < 2) {
+            return; // Don't render if no valid data
+        }
+        
         const ctx = this.ctx;
         const canvas = this.canvas;
         
-        // Performance optimization: Dynamic FPS throttling
+        // Performance optimization: Simple FPS throttling
         const now = performance.now();
         const deltaTime = now - this.lastRenderTime;
         
-        // Throttle based on device capability
+        // Throttle based on device capability (but don't skip - just delay)
         const targetFrameTime = this.isLowEnd ? 33.33 : 16.67; // 30 FPS low-end, 60 FPS high-end
         if (deltaTime < targetFrameTime) {
-            // Skip this frame but keep the data for next render
+            // Too soon, skip this frame
             return;
         }
         this.lastRenderTime = now;
