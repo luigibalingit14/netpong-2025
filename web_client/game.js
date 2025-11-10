@@ -27,6 +27,10 @@ class NetPongClient {
         this.playerIndex = -1; // Which player are we (0 or 1)
         this.lastBallVelocity = { x: 0, y: 0 }; // Track ball velocity for collision sounds
         
+        // Rendering state
+        this.renderScheduled = false;
+        this.lastRenderTime = 0;
+        
         // Canvas with hardware acceleration
         this.canvas = document.getElementById('game-canvas');
         this.ctx = this.canvas.getContext('2d', { 
@@ -392,8 +396,14 @@ class NetPongClient {
         // Update HUD
         this.updateHUD(data);
         
-        // Render game
-        this.render(data);
+        // Schedule render using requestAnimationFrame
+        if (!this.renderScheduled) {
+            this.renderScheduled = true;
+            requestAnimationFrame(() => {
+                this.render(data);
+                this.renderScheduled = false;
+            });
+        }
     }
     
     updateHUD(data) {
@@ -442,13 +452,15 @@ class NetPongClient {
         const canvas = this.canvas;
         
         // Performance optimization: Dynamic FPS throttling
-        if (!this.lastRenderTime) this.lastRenderTime = 0;
         const now = performance.now();
         const deltaTime = now - this.lastRenderTime;
         
         // Throttle based on device capability
         const targetFrameTime = this.isLowEnd ? 33.33 : 16.67; // 30 FPS low-end, 60 FPS high-end
-        if (deltaTime < targetFrameTime) return;
+        if (deltaTime < targetFrameTime) {
+            // Skip this frame but keep the data for next render
+            return;
+        }
         this.lastRenderTime = now;
         
         // Clear canvas efficiently
