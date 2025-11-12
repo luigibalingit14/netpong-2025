@@ -841,6 +841,7 @@ class NetPongClient {
         
         this.practiceMode = true;
         this.playerIndex = 0; // Player is always left paddle
+        this.lastPracticeTime = null; // Reset timing
         
         // Initialize local game state (match server format)
         this.localGameState = {
@@ -883,7 +884,7 @@ class NetPongClient {
         console.log('✅ Practice game loop started');
     }
     
-    practiceGameLoop() {
+    practiceGameLoop(timestamp) {
         if (!this.practiceMode) return;
         
         const CANVAS_WIDTH = 800;
@@ -893,8 +894,24 @@ class NetPongClient {
         const BALL_SPEED_INCREMENT = 1.02;
         const MAX_BALL_SPEED = 600;
         
-        const dt = 0.016; // ~60 FPS (16ms per frame)
+        // Calculate delta time for smooth frame-rate independent physics
+        if (!this.lastPracticeTime) {
+            this.lastPracticeTime = timestamp;
+            this.practiceFrameCount = 0;
+        }
+        const dt = Math.min((timestamp - this.lastPracticeTime) / 1000, 0.033); // Cap at ~30fps min
+        this.lastPracticeTime = timestamp;
+        this.practiceFrameCount++;
+        
         const state = this.localGameState;
+        
+        // Debug log every 60 frames
+        if (this.practiceFrameCount % 60 === 0) {
+            console.log('🎮 Practice frame:', this.practiceFrameCount, 'Ball:', 
+                Math.round(state.ball.x), Math.round(state.ball.y), 
+                'Player:', Math.round(state.players[0].y), 
+                'AI:', Math.round(state.players[1].y));
+        }
         
         // Update player paddle
         const player = state.players[0];
@@ -989,8 +1006,10 @@ class NetPongClient {
             return;
         }
         
-        // Continue loop
-        setTimeout(() => this.practiceGameLoop(), 1000/60);
+        // Continue loop with requestAnimationFrame for better performance
+        if (this.practiceMode) {
+            requestAnimationFrame(() => this.practiceGameLoop());
+        }
     }
     
     resetBall() {
