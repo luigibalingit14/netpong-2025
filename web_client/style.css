@@ -353,6 +353,30 @@ body {
     image-rendering: crisp-edges;
 }
 
+/* Practice Exit button (top-left) */
+.exit-btn {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    z-index: 1100;
+    padding: 0.5rem 0.9rem;
+    font-size: 0.9rem;
+    font-weight: bold;
+    border: 2px solid var(--neon-pink);
+    color: var(--neon-pink);
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 8px;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    cursor: pointer;
+    display: none; /* toggled by JS */
+}
+
+.exit-btn:hover {
+    background: rgba(255, 0, 255, 0.2);
+    box-shadow: 0 0 15px rgba(255, 0, 255, 0.5);
+}
+
 .game-hud {
     display: flex;
     justify-content: space-between;
@@ -561,6 +585,12 @@ body {
         right: 15px;
         gap: 10px;
     }
+
+    .exit-btn {
+        top: 15px;
+        left: 15px;
+        padding: 0.45rem 0.8rem;
+    }
     
     .sound-btn {
         width: 45px;
@@ -662,6 +692,14 @@ body {
         flex-direction: column;
         align-items: flex-end;
         z-index: 9999;
+    }
+
+    .exit-btn {
+        top: 10px;
+        left: 10px;
+        font-size: 0.85rem;
+        padding: 0.4rem 0.75rem;
+        z-index: 10000;
     }
     
     .sound-btn {

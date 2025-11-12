@@ -136,6 +136,15 @@ class NetPongClient {
             this.soundManager.playMenuClick();
             this.showLeaderboard();
         });
+
+        // Exit Practice button (appears only in Practice Mode)
+        const exitBtn = document.getElementById('exit-practice-btn');
+        if (exitBtn) {
+            exitBtn.addEventListener('click', () => {
+                this.soundManager.playMenuClick();
+                this.exitPracticeMode();
+            });
+        }
         
         // Join room input with sounds
         document.getElementById('join-room-submit').addEventListener('click', () => {
@@ -953,6 +962,9 @@ class NetPongClient {
         
         this.showScreen('game');
         this.updateConnectionStatus('PRACTICE MODE', true);
+    // Show exit button for practice mode
+    const exitBtn = document.getElementById('exit-practice-btn');
+    if (exitBtn) exitBtn.style.display = 'inline-block';
         this.startGameLoop();
         
         // Start practice game loop with requestAnimationFrame
@@ -1116,6 +1128,29 @@ class NetPongClient {
         
         this.showScreen('gameOver');
         this.soundManager.playVictory();
+    }
+
+    // Allow exiting practice mode back to the main menu at any time
+    exitPracticeMode() {
+        if (!this.practiceMode) {
+            // Already not in practice; just go to menu
+            this.showScreen('menu');
+            this.updateConnectionStatus('OFFLINE', false);
+            const exitBtn = document.getElementById('exit-practice-btn');
+            if (exitBtn) exitBtn.style.display = 'none';
+            return;
+        }
+
+        // Stop practice loop and rendering
+        this.practiceMode = false;      // practiceGameLoop will early-return
+        this.localGameState = null;     // clear local state
+        this.stopGameLoop();            // stop render loop to save CPU
+
+        // Hide button and return to menu
+        const exitBtn = document.getElementById('exit-practice-btn');
+        if (exitBtn) exitBtn.style.display = 'none';
+        this.showScreen('menu');
+        this.updateConnectionStatus('OFFLINE', false);
     }
 }
 
