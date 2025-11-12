@@ -520,6 +520,66 @@ class NetPongClient {
         barEl.style.setProperty('--latency-color', color);
     }
     
+    drawEnhancedBall(ctx, x, y, radius) {
+        // Ball trail effect (only on high-end devices)
+        if (!this.isLowEnd) {
+            // Draw trail particles
+            ctx.globalAlpha = 0.3;
+            for (let i = 1; i <= 3; i++) {
+                const trailRadius = radius * (1 - i * 0.2);
+                const gradient = ctx.createRadialGradient(x, y, 0, x, y, trailRadius * 2);
+                gradient.addColorStop(0, 'rgba(255, 255, 255, 0.8)');
+                gradient.addColorStop(0.5, 'rgba(0, 243, 255, 0.4)');
+                gradient.addColorStop(1, 'rgba(0, 243, 255, 0)');
+                
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(x, y, trailRadius * 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.globalAlpha = 1;
+        }
+        
+        // Main ball with gradient
+        const gradient = ctx.createRadialGradient(
+            x - radius * 0.3, y - radius * 0.3, 0,
+            x, y, radius
+        );
+        gradient.addColorStop(0, '#ffffff');
+        gradient.addColorStop(0.4, '#f0f0f0');
+        gradient.addColorStop(0.8, '#00f3ff');
+        gradient.addColorStop(1, '#00b8d4');
+        
+        ctx.fillStyle = gradient;
+        
+        // Outer glow
+        if (!this.isLowEnd) {
+            ctx.shadowBlur = 20;
+            ctx.shadowColor = '#00f3ff';
+        }
+        
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Inner highlight
+        if (!this.isLowEnd) {
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+            ctx.beginPath();
+            ctx.arc(x - radius * 0.3, y - radius * 0.3, radius * 0.4, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Pulse ring effect
+            const pulseRadius = radius + Math.sin(Date.now() / 200) * 2;
+            ctx.strokeStyle = 'rgba(0, 243, 255, 0.5)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(x, y, pulseRadius, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+    }
+    
     render(data) {
         if (!data || !data.players || data.players.length < 2) {
             return; // Don't render if no valid data
@@ -556,11 +616,21 @@ class NetPongClient {
                 ctx.shadowBlur = 0; // Disable shadows completely on low-end
             }
             
-            // Left paddle
-            ctx.fillStyle = '#00f3ff';
+            // Left paddle with gradient
+            const leftGradient = ctx.createLinearGradient(
+                paddleOffset, data.players[0].paddle_y - paddleHeight / 2,
+                paddleOffset, data.players[0].paddle_y + paddleHeight / 2
+            );
+            leftGradient.addColorStop(0, '#00f3ff');
+            leftGradient.addColorStop(0.5, '#00d4ff');
+            leftGradient.addColorStop(1, '#00a0c8');
+            ctx.fillStyle = leftGradient;
+            
             if (!this.isLowEnd) {
                 ctx.shadowColor = '#00f3ff';
+                ctx.shadowBlur = 15;
             }
+            
             ctx.fillRect(
                 paddleOffset,
                 data.players[0].paddle_y - paddleHeight / 2,
@@ -568,11 +638,21 @@ class NetPongClient {
                 paddleHeight
             );
             
-            // Right paddle
-            ctx.fillStyle = '#ff00ff';
+            // Right paddle with gradient
+            const rightGradient = ctx.createLinearGradient(
+                canvas.width - paddleOffset - paddleWidth, data.players[1].paddle_y - paddleHeight / 2,
+                canvas.width - paddleOffset - paddleWidth, data.players[1].paddle_y + paddleHeight / 2
+            );
+            rightGradient.addColorStop(0, '#ff00ff');
+            rightGradient.addColorStop(0.5, '#ff00d4');
+            rightGradient.addColorStop(1, '#c800a0');
+            ctx.fillStyle = rightGradient;
+            
             if (!this.isLowEnd) {
                 ctx.shadowColor = '#ff00ff';
+                ctx.shadowBlur = 15;
             }
+            
             ctx.fillRect(
                 canvas.width - paddleOffset - paddleWidth,
                 data.players[1].paddle_y - paddleHeight / 2,
@@ -580,15 +660,8 @@ class NetPongClient {
                 paddleHeight
             );
             
-            // Draw ball
-            ctx.fillStyle = '#fff';
-            if (!this.isLowEnd) {
-                ctx.shadowBlur = 15;
-                ctx.shadowColor = '#fff';
-            }
-            ctx.beginPath();
-            ctx.arc(data.ball.x, data.ball.y, 10, 0, Math.PI * 2);
-            ctx.fill();
+            // Draw ball with enhanced effects
+            this.drawEnhancedBall(ctx, data.ball.x, data.ball.y, 10);
             
             // Reset shadow
             ctx.shadowBlur = 0;
