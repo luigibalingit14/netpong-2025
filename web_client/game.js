@@ -41,6 +41,11 @@ class NetPongClient {
             lastTime: 0
         };
         
+        // Controls config
+        this.controlMode = 'swipe'; // 'swipe' | 'drag'
+        this.leftHanded = false;
+        this.sensitivity = 3.0; // max speed multiplier
+        
         // Rendering state
         this.lastRenderTime = 0;
         this.gameLoopId = null; // Track game loop animation frame
@@ -232,7 +237,7 @@ class NetPongClient {
         const downBtn = document.getElementById('mobile-down');
         const mobileControls = document.getElementById('mobile-controls');
         const controlsText = document.getElementById('controls-text');
-        
+
         // Show mobile controls if mobile device
         if (this.isMobile) {
             mobileControls.style.display = 'flex';
@@ -241,7 +246,7 @@ class NetPongClient {
             mobileControls.style.display = 'none';
             controlsText.textContent = 'CONTROLS: Arrow keys ↑ ↓ to move';
         }
-        
+
         // Touch events for UP button - with better mobile handling
         upBtn.addEventListener('touchstart', (e) => {
             e.preventDefault();
@@ -249,20 +254,20 @@ class NetPongClient {
             this.keys['ArrowUp'] = true;
             this.updateInput();
         }, { passive: false });
-        
+
         upBtn.addEventListener('touchend', (e) => {
             e.preventDefault();
             e.stopPropagation();
             this.keys['ArrowUp'] = false;
             this.updateInput();
         }, { passive: false });
-        
+
         upBtn.addEventListener('touchcancel', (e) => {
             e.preventDefault();
             this.keys['ArrowUp'] = false;
             this.updateInput();
         }, { passive: false });
-        
+
         // Touch events for DOWN button
         downBtn.addEventListener('touchstart', (e) => {
             e.preventDefault();
@@ -270,36 +275,36 @@ class NetPongClient {
             this.keys['ArrowDown'] = true;
             this.updateInput();
         }, { passive: false });
-        
+
         downBtn.addEventListener('touchend', (e) => {
             e.preventDefault();
             e.stopPropagation();
             this.keys['ArrowDown'] = false;
             this.updateInput();
         }, { passive: false });
-        
+
         downBtn.addEventListener('touchcancel', (e) => {
             e.preventDefault();
             this.keys['ArrowDown'] = false;
             this.updateInput();
         }, { passive: false });
-        
+
         // Also support mouse events for testing on desktop
         upBtn.addEventListener('mousedown', () => {
             this.keys['ArrowUp'] = true;
             this.updateInput();
         });
-        
+
         upBtn.addEventListener('mouseup', () => {
             this.keys['ArrowUp'] = false;
             this.updateInput();
         });
-        
+
         downBtn.addEventListener('mousedown', () => {
             this.keys['ArrowDown'] = true;
             this.updateInput();
         });
-        
+
         downBtn.addEventListener('mouseup', () => {
             this.keys['ArrowDown'] = false;
             this.updateInput();
@@ -310,11 +315,13 @@ class NetPongClient {
         const getTouch = (e) => (e.touches && e.touches[0]) || (e.changedTouches && e.changedTouches[0]);
         const DEADZONE = 0.15;     // px/ms threshold for direction
         const SCALE = 2.5;         // velocity to speed multiplier mapping
-        const MAX_SPEED = 3.0;     // cap multiplier
+        const MAX_SPEED = () => this.sensitivity; // cap multiplier based on settings
 
-        const inRightHalf = (clientX) => {
+        const inControlHalf = (clientX) => {
             const rect = canvas.getBoundingClientRect();
-            return clientX >= rect.left + rect.width / 2 && clientX <= rect.right && clientX >= 0 && clientX <= window.innerWidth;
+            const startX = this.leftHanded ? rect.left : rect.left + rect.width / 2;
+            const endX = this.leftHanded ? rect.left + rect.width / 2 : rect.right;
+            return clientX >= startX && clientX <= endX;
         };
 
         const sendDirectionIfNeeded = (dir) => {
@@ -327,10 +334,10 @@ class NetPongClient {
         };
 
         canvas.addEventListener('touchstart', (e) => {
-            if (!this.isMobile) return;
+            if (!this.isMobile || this.controlMode !== 'swipe') return;
             const t = getTouch(e);
             if (!t) return;
-            if (!inRightHalf(t.clientX)) return; // only use right half
+            if (!inControlHalf(t.clientX)) return; // only use control half
             e.preventDefault();
             this.swipe.active = true;
             this.swipe.lastY = t.clientY;
@@ -339,7 +346,7 @@ class NetPongClient {
         }, { passive: false });
 
         canvas.addEventListener('touchmove', (e) => {
-            if (!this.swipe.active) return;
+            if (!this.swipe.active || this.controlMode !== 'swipe') return;
             const t = getTouch(e);
             if (!t) return;
             e.preventDefault();
@@ -356,7 +363,7 @@ class NetPongClient {
 
             // Speed multiplier based on swipe velocity
             const mag = Math.max(0, Math.abs(vel) - DEADZONE);
-            const speed = Math.min(1 + mag * SCALE, MAX_SPEED);
+            const speed = Math.min(1 + mag * SCALE, MAX_SPEED());
             this.swipe.speed = isFinite(speed) ? speed : 1;
 
             this.swipe.lastY = t.clientY;
@@ -372,9 +379,49 @@ class NetPongClient {
         };
         canvas.addEventListener('touchend', endSwipe, { passive: false });
         canvas.addEventListener('touchcancel', endSwipe, { passive: false });
+
+        // --- Drag-to-Follow (optional mode) ---
+        let dragActive = false;
+        canvas.addEventListener('touchstart', (e) => {
+            if (this.controlMode !== 'drag') return;
+            const t = (e.touches && e.touches[0]);
+            if (!t) return;
+            if (!inControlHalf(t.clientX)) return;
+            dragActive = true;
+            this.currentInput = 0; // direct positioning — no direction spam
+            e.preventDefault();
+        }, { passive: false });
+
+        canvas.addEventListener('touchmove', (e) => {
+            if (!dragActive || this.controlMode !== 'drag') return;
+            const t = (e.touches && e.touches[0]);
+            if (!t) return;
+            const rect = canvas.getBoundingClientRect();
+            // map clientY to canvas coordinate
+            const y = ((t.clientY - rect.top) / rect.height) * canvas.height;
+            // In practice, set paddle directly; in multiplayer, convert to direction pulses
+            if (this.practiceMode && this.localGameState) {
+                const p = this.localGameState.players[0];
+                p.y = Math.max(50, Math.min(600 - 50, y));
+                p.paddle_y = p.y;
+            } else {
+                // infer direction relative to current paddle for server
+                const approx = this.gameState && this.gameState.players ? this.gameState.players[this.playerIndex]?.paddle_y : null;
+                const dir = approx && Math.abs(y - approx) > 5 ? (y > approx ? 1 : -1) : 0;
+                if (dir !== this.currentInput) {
+                    this.currentInput = dir;
+                    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                        this.send({ type: 'paddle_input', direction: dir });
+                    }
+                }
+            }
+            e.preventDefault();
+        }, { passive: false });
+
+        const endDrag = () => { dragActive = false; if (!this.practiceMode) this.currentInput = 0; };
+        canvas.addEventListener('touchend', endDrag, { passive: false });
+        canvas.addEventListener('touchcancel', endDrag, { passive: false });
     }
-    
-    // ===== WEBSOCKET =====
     
     connect() {
         this.updateConnectionStatus('Connecting...', false);
@@ -432,6 +479,48 @@ class NetPongClient {
                 this.startGameLoop(); // Start continuous rendering
                 break;
             
+        
+        // --- Drag-to-Follow (optional mode) ---
+        let dragActive = false;
+        canvas.addEventListener('touchstart', (e) => {
+            if (this.controlMode !== 'drag') return;
+            const t = (e.touches && e.touches[0]);
+            if (!t) return;
+            if (!inRightHalf(t.clientX)) return;
+            dragActive = true;
+            this.currentInput = 0; // direct positioning — no direction spam
+            e.preventDefault();
+        }, { passive: false });
+        
+        canvas.addEventListener('touchmove', (e) => {
+            if (!dragActive || this.controlMode !== 'drag') return;
+            const t = (e.touches && e.touches[0]);
+            if (!t) return;
+            const rect = canvas.getBoundingClientRect();
+            // map clientY to canvas coordinate
+            const y = ((t.clientY - rect.top) / rect.height) * canvas.height;
+            // In practice, set paddle directly; in multiplayer, convert to direction pulses
+            if (this.practiceMode && this.localGameState) {
+                const p = this.localGameState.players[0];
+                p.y = Math.max(50, Math.min(600 - 50, y));
+                p.paddle_y = p.y;
+            } else {
+                // infer direction relative to current paddle for server
+                const approx = this.gameState && this.gameState.players ? this.gameState.players[this.playerIndex]?.paddle_y : null;
+                const dir = approx && Math.abs(y - approx) > 5 ? (y > approx ? 1 : -1) : 0;
+                if (dir !== this.currentInput) {
+                    this.currentInput = dir;
+                    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                        this.send({ type: 'paddle_input', direction: dir });
+                    }
+                }
+            }
+            e.preventDefault();
+        }, { passive: false });
+        
+        const endDrag = () => { dragActive = false; if (!this.practiceMode) this.currentInput = 0; };
+        canvas.addEventListener('touchend', endDrag, { passive: false });
+        canvas.addEventListener('touchcancel', endDrag, { passive: false });
             case 'player_joined':
                 // Second player joined, start game
                 this.showScreen('game');

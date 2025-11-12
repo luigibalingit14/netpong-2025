@@ -306,6 +306,42 @@ body {
     border-color: var(--text-secondary);
 }
 
+/* Settings panel */
+.settings-panel {
+    position: fixed;
+    top: 70px;
+    right: 20px;
+    width: 260px;
+    background: rgba(26, 26, 46, 0.95);
+    border: 2px solid var(--neon-blue);
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0, 243, 255, 0.4);
+    padding: 12px;
+    z-index: 1100;
+}
+
+.settings-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.settings-row label {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.settings-row select,
+.settings-row input[type="range"] {
+    width: 140px;
+}
+
+.settings-row.end {
+    justify-content: flex-end;
+}
+
 /* Waiting Screen */
 .waiting-content {
     text-align: center;
@@ -597,6 +633,12 @@ body {
         height: 45px;
         font-size: 1.3rem;
     }
+
+    .settings-panel {
+        right: 12px;
+        top: 60px;
+        width: 240px;
+    }
     
     /* Leaderboard adjustments */
     .leaderboard-content {
@@ -709,6 +751,13 @@ body {
         border-width: 3px;
         box-shadow: 0 0 20px rgba(0, 243, 255, 0.6);
         background: rgba(0, 0, 0, 0.7);
+    }
+
+    .settings-panel {
+        right: 10px;
+        top: 80px;
+        width: 90%;
+        max-width: 320px;
     }
     
     .sound-btn:hover,
