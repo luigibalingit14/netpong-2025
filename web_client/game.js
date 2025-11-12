@@ -617,13 +617,17 @@ class NetPongClient {
             newInput = 1;
         }
         
-        // Only send if input changed
+        // Update current input
         if (newInput !== this.currentInput) {
             this.currentInput = newInput;
-            this.send({
-                type: 'paddle_input',
-                direction: newInput
-            });
+            
+            // Only send to server if not in practice mode
+            if (!this.practiceMode && this.ws && this.ws.readyState === WebSocket.OPEN) {
+                this.send({
+                    type: 'paddle_input',
+                    direction: newInput
+                });
+            }
         }
     }
     
@@ -833,6 +837,8 @@ class NetPongClient {
     startPracticeMode() {
         const name = document.getElementById('player-name').value.trim() || 'Player';
         
+        console.log('🎮 Starting Practice Mode...');
+        
         this.practiceMode = true;
         this.playerIndex = 0; // Player is always left paddle
         
@@ -863,12 +869,16 @@ class NetPongClient {
             countdown: null
         };
         
+        console.log('✅ Practice mode state initialized:', this.localGameState);
+        
         this.showScreen('game');
         this.updateConnectionStatus('PRACTICE MODE', true);
         this.startGameLoop();
         
         // Start practice game loop
         this.practiceGameLoop();
+        
+        console.log('✅ Practice game loop started');
     }
     
     practiceGameLoop() {
@@ -877,11 +887,11 @@ class NetPongClient {
         const CANVAS_WIDTH = 800;
         const CANVAS_HEIGHT = 600;
         const PADDLE_HEIGHT = 100;
-        const PADDLE_SPEED = 5;
+        const PADDLE_SPEED = 8;
         const BALL_SPEED_INCREMENT = 1.02;
         const MAX_BALL_SPEED = 600;
         
-        const dt = 1/60; // 60 FPS
+        const dt = 0.016; // ~60 FPS (16ms per frame)
         const state = this.localGameState;
         
         // Update player paddle
@@ -905,7 +915,7 @@ class NetPongClient {
             }
         }
         
-        // Update ball position
+        // Update ball position (convert velocity from pixels/sec to pixels/frame)
         state.ball.x += state.ball.vx * dt;
         state.ball.y += state.ball.vy * dt;
         
