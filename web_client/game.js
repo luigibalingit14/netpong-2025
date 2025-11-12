@@ -27,6 +27,11 @@ class NetPongClient {
         this.playerIndex = -1; // Which player are we (0 or 1)
         this.lastBallVelocity = { x: 0, y: 0 }; // Track ball velocity for collision sounds
         
+        // Practice mode
+        this.practiceMode = false;
+        this.aiDifficulty = 0.7; // 0-1, higher is harder
+        this.localGameState = null; // For practice mode
+        
         // Rendering state
         this.lastRenderTime = 0;
         this.gameLoopId = null; // Track game loop animation frame
@@ -111,6 +116,11 @@ class NetPongClient {
         };
         
         // Menu buttons with sounds
+        document.getElementById('practice-mode-btn').addEventListener('click', () => {
+            playIntroOnce();
+            this.soundManager.playMenuClick();
+            this.startPracticeMode();
+        });
         document.getElementById('create-room-btn').addEventListener('click', () => {
             playIntroOnce();
             this.soundManager.playMenuClick();
@@ -663,10 +673,11 @@ class NetPongClient {
                 console.log(`🔄 Loop call #${loopCallCount}, game state:`, this.gameState ? 'EXISTS' : 'NULL');
             }
             
-            // Render current game state if available
-            if (this.gameState) {
+            // Render current game state if available (or local state for practice mode)
+            const stateToRender = this.practiceMode ? this.localGameState : this.gameState;
+            if (stateToRender) {
                 try {
-                    this.render(this.gameState);
+                    this.render(stateToRender);
                     renderCount++;
                 } catch (error) {
                     console.error('❌ Render error:', error);
@@ -815,6 +826,183 @@ class NetPongClient {
     playScoreSound() {
         // Could add audio feedback here
         console.log('Score!');
+    }
+    
+    // ===== PRACTICE MODE =====
+    
+    startPracticeMode() {
+        const name = document.getElementById('player-name').value.trim() || 'Player';
+        
+        this.practiceMode = true;
+        this.playerIndex = 0; // Player is always left paddle
+        
+        // Initialize local game state
+        this.localGameState = {
+            state: 'playing',
+            ball: {
+                x: 400,
+                y: 300,
+                vx: 300,
+                vy: 200,
+                radius: 10
+            },
+            players: [
+                {
+                    player_id: 'local',
+                    name: name,
+                    y: 300,
+                    score: 0
+                },
+                {
+                    player_id: 'ai',
+                    name: 'AI Opponent',
+                    y: 300,
+                    score: 0
+                }
+            ],
+            countdown: null
+        };
+        
+        this.showScreen('game');
+        this.updateConnectionStatus('PRACTICE MODE', true);
+        this.startGameLoop();
+        
+        // Start practice game loop
+        this.practiceGameLoop();
+    }
+    
+    practiceGameLoop() {
+        if (!this.practiceMode) return;
+        
+        const CANVAS_WIDTH = 800;
+        const CANVAS_HEIGHT = 600;
+        const PADDLE_HEIGHT = 100;
+        const PADDLE_SPEED = 5;
+        const BALL_SPEED_INCREMENT = 1.02;
+        const MAX_BALL_SPEED = 600;
+        
+        const dt = 1/60; // 60 FPS
+        const state = this.localGameState;
+        
+        // Update player paddle
+        const player = state.players[0];
+        if (this.currentInput !== 0) {
+            player.y += this.currentInput * PADDLE_SPEED;
+            player.y = Math.max(PADDLE_HEIGHT/2, Math.min(CANVAS_HEIGHT - PADDLE_HEIGHT/2, player.y));
+        }
+        
+        // AI opponent - follows ball with some delay
+        const ai = state.players[1];
+        const aiCenter = ai.y;
+        const ballY = state.ball.y;
+        const aiSpeed = PADDLE_SPEED * this.aiDifficulty;
+        
+        if (Math.abs(ballY - aiCenter) > 10) {
+            if (ballY > aiCenter) {
+                ai.y = Math.min(CANVAS_HEIGHT - PADDLE_HEIGHT/2, ai.y + aiSpeed);
+            } else {
+                ai.y = Math.max(PADDLE_HEIGHT/2, ai.y - aiSpeed);
+            }
+        }
+        
+        // Update ball position
+        state.ball.x += state.ball.vx * dt;
+        state.ball.y += state.ball.vy * dt;
+        
+        // Ball collision with top/bottom walls
+        if (state.ball.y - state.ball.radius <= 0 || state.ball.y + state.ball.radius >= CANVAS_HEIGHT) {
+            state.ball.vy *= -1;
+            state.ball.y = Math.max(state.ball.radius, Math.min(CANVAS_HEIGHT - state.ball.radius, state.ball.y));
+            this.soundManager.playWallHit();
+        }
+        
+        // Ball collision with paddles
+        const PADDLE_WIDTH = 20;
+        const PADDLE_X_LEFT = 40;
+        const PADDLE_X_RIGHT = CANVAS_WIDTH - 40;
+        
+        // Left paddle (player)
+        if (state.ball.x - state.ball.radius <= PADDLE_X_LEFT + PADDLE_WIDTH/2) {
+            if (Math.abs(state.ball.y - player.y) < PADDLE_HEIGHT/2 + state.ball.radius) {
+                state.ball.vx = Math.abs(state.ball.vx) * BALL_SPEED_INCREMENT;
+                state.ball.x = PADDLE_X_LEFT + PADDLE_WIDTH/2 + state.ball.radius;
+                
+                // Add spin based on paddle hit position
+                const hitPos = (state.ball.y - player.y) / (PADDLE_HEIGHT/2);
+                state.ball.vy += hitPos * 50;
+                
+                this.soundManager.playPaddleHit();
+            }
+        }
+        
+        // Right paddle (AI)
+        if (state.ball.x + state.ball.radius >= PADDLE_X_RIGHT - PADDLE_WIDTH/2) {
+            if (Math.abs(state.ball.y - ai.y) < PADDLE_HEIGHT/2 + state.ball.radius) {
+                state.ball.vx = -Math.abs(state.ball.vx) * BALL_SPEED_INCREMENT;
+                state.ball.x = PADDLE_X_RIGHT - PADDLE_WIDTH/2 - state.ball.radius;
+                
+                const hitPos = (state.ball.y - ai.y) / (PADDLE_HEIGHT/2);
+                state.ball.vy += hitPos * 50;
+                
+                this.soundManager.playPaddleHit();
+            }
+        }
+        
+        // Cap ball speed
+        const currentSpeed = Math.sqrt(state.ball.vx * state.ball.vx + state.ball.vy * state.ball.vy);
+        if (currentSpeed > MAX_BALL_SPEED) {
+            const scale = MAX_BALL_SPEED / currentSpeed;
+            state.ball.vx *= scale;
+            state.ball.vy *= scale;
+        }
+        
+        // Score detection
+        if (state.ball.x - state.ball.radius <= 0) {
+            // AI scores
+            ai.score++;
+            this.soundManager.playScore();
+            this.resetBall();
+        } else if (state.ball.x + state.ball.radius >= CANVAS_WIDTH) {
+            // Player scores
+            player.score++;
+            this.soundManager.playScore();
+            this.resetBall();
+        }
+        
+        // Check for game over
+        if (player.score >= 5 || ai.score >= 5) {
+            this.endPracticeMode();
+            return;
+        }
+        
+        // Continue loop
+        setTimeout(() => this.practiceGameLoop(), 1000/60);
+    }
+    
+    resetBall() {
+        const state = this.localGameState;
+        state.ball.x = 400;
+        state.ball.y = 300;
+        
+        // Random direction
+        const angle = (Math.random() - 0.5) * Math.PI/3;
+        const direction = Math.random() < 0.5 ? 1 : -1;
+        state.ball.vx = Math.cos(angle) * 300 * direction;
+        state.ball.vy = Math.sin(angle) * 300;
+    }
+    
+    endPracticeMode() {
+        this.practiceMode = false;
+        const winner = this.localGameState.players[0].score >= 5 ? 
+            this.localGameState.players[0].name : 'AI Opponent';
+        
+        // Show game over
+        document.getElementById('winner-name').textContent = winner;
+        document.getElementById('final-score').textContent = 
+            `${this.localGameState.players[0].score} - ${this.localGameState.players[1].score}`;
+        
+        this.showScreen('gameOver');
+        this.soundManager.playVictory();
     }
 }
 
