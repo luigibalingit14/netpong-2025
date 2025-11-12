@@ -27,10 +27,11 @@ class NetPongClient {
         this.playerIndex = -1; // Which player are we (0 or 1)
         this.lastBallVelocity = { x: 0, y: 0 }; // Track ball velocity for collision sounds
         
-        // Practice mode
-        this.practiceMode = false;
-        this.aiDifficulty = 0.7; // 0-1, higher is harder
-        this.localGameState = null; // For practice mode
+    // Practice mode
+    this.practiceMode = false;
+    this.aiDifficulty = 0.7; // 0-1, higher is harder
+    this.localGameState = null; // For practice mode
+    this.lastMode = 'menu'; // 'menu' | 'practice' | 'multiplayer'
         
         // Rendering state
         this.lastRenderTime = 0;
@@ -849,8 +850,12 @@ class NetPongClient {
     }
     
     playAgain() {
-        this.showScreen('menu');
-        // Could implement rematch logic here
+        if (this.lastMode === 'practice') {
+            this.startPracticeMode();
+        } else {
+            this.showScreen('menu');
+            // Could implement rematch logic here for multiplayer
+        }
     }
     
     // ===== LEADERBOARD =====
@@ -925,7 +930,8 @@ class NetPongClient {
         
         console.log('🎮 Starting Practice Mode...');
         
-        this.practiceMode = true;
+    this.practiceMode = true;
+    this.lastMode = 'practice';
         this.playerIndex = 0; // Player is always left paddle
         this.lastPracticeTime = null; // Reset timing
         
@@ -1118,15 +1124,33 @@ class NetPongClient {
     
     endPracticeMode() {
         this.practiceMode = false;
-        const winner = this.localGameState.players[0].score >= 5 ? 
-            this.localGameState.players[0].name : 'AI Opponent';
-        
-        // Show game over
-        document.getElementById('winner-name').textContent = winner;
-        document.getElementById('final-score').textContent = 
-            `${this.localGameState.players[0].score} - ${this.localGameState.players[1].score}`;
-        
-        this.showScreen('gameOver');
+        this.lastMode = 'practice';
+
+        const player = this.localGameState.players[0];
+        const ai = this.localGameState.players[1];
+        const playerWon = player.score >= 5;
+
+        // Update Game Over UI (reuse multiplayer screen)
+        const winnerText = document.getElementById('winner-text');
+        const finalScores = document.getElementById('final-scores');
+        if (winnerText) {
+            const text = playerWon ? 'YOU WIN!' : 'AI WINS!';
+            winnerText.textContent = text;
+            winnerText.setAttribute('data-text', text);
+        }
+        if (finalScores) {
+            finalScores.innerHTML = `
+                <p>${player.name}: ${player.score}</p>
+                <p>${ai.name}: ${ai.score}</p>
+            `;
+        }
+
+        // Hide Practice Exit button if visible
+        const exitBtn = document.getElementById('exit-practice-btn');
+        if (exitBtn) exitBtn.style.display = 'none';
+
+        this.showScreen('gameover');
+        this.updateConnectionStatus('OFFLINE', false);
         this.soundManager.playVictory();
     }
 
