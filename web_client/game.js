@@ -1084,7 +1084,7 @@ class NetPongClient {
         
         // Continue loop with requestAnimationFrame for better performance
         if (this.practiceMode) {
-            requestAnimationFrame(() => this.practiceGameLoop());
+            requestAnimationFrame((timestamp) => this.practiceGameLoop(timestamp));
         }
     }
     
