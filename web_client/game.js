@@ -901,8 +901,8 @@ class NetPongClient {
         if (this.currentInput !== 0) {
             player.y += this.currentInput * PADDLE_SPEED;
             player.y = Math.max(PADDLE_HEIGHT/2, Math.min(CANVAS_HEIGHT - PADDLE_HEIGHT/2, player.y));
-            player.paddle_y = player.y;  // Sync for render
         }
+        player.paddle_y = player.y;  // Always sync for render (CRITICAL!)
         
         // AI opponent - follows ball with some delay
         const ai = state.players[1];
@@ -916,8 +916,8 @@ class NetPongClient {
             } else {
                 ai.y = Math.max(PADDLE_HEIGHT/2, ai.y - aiSpeed);
             }
-            ai.paddle_y = ai.y;  // Sync for render
         }
+        ai.paddle_y = ai.y;  // Always sync for render (CRITICAL!)
         
         // Update ball position (convert velocity from pixels/sec to pixels/frame)
         state.ball.x += state.ball.vx * dt;
