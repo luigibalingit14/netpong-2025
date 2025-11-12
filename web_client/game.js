@@ -842,7 +842,7 @@ class NetPongClient {
         this.practiceMode = true;
         this.playerIndex = 0; // Player is always left paddle
         
-        // Initialize local game state
+        // Initialize local game state (match server format)
         this.localGameState = {
             state: 'playing',
             ball: {
@@ -856,13 +856,15 @@ class NetPongClient {
                 {
                     player_id: 'local',
                     name: name,
-                    y: 300,
+                    paddle_y: 300,  // render() expects paddle_y, not y
+                    y: 300,          // keep for game loop
                     score: 0
                 },
                 {
                     player_id: 'ai',
                     name: 'AI Opponent',
-                    y: 300,
+                    paddle_y: 300,  // render() expects paddle_y, not y
+                    y: 300,          // keep for game loop
                     score: 0
                 }
             ],
@@ -899,6 +901,7 @@ class NetPongClient {
         if (this.currentInput !== 0) {
             player.y += this.currentInput * PADDLE_SPEED;
             player.y = Math.max(PADDLE_HEIGHT/2, Math.min(CANVAS_HEIGHT - PADDLE_HEIGHT/2, player.y));
+            player.paddle_y = player.y;  // Sync for render
         }
         
         // AI opponent - follows ball with some delay
@@ -913,6 +916,7 @@ class NetPongClient {
             } else {
                 ai.y = Math.max(PADDLE_HEIGHT/2, ai.y - aiSpeed);
             }
+            ai.paddle_y = ai.y;  // Sync for render
         }
         
         // Update ball position (convert velocity from pixels/sec to pixels/frame)
