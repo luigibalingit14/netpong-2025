@@ -764,7 +764,11 @@ class NetPongClient {
                 if (frameCount >= 60) {
                     const now = performance.now();
                     const fps = Math.round(60000 / (now - lastFpsTime));
-                    console.log(`📊 Loop FPS: ${fps} | Renders: ${renderCount} | Ball: (${Math.round(this.gameState.ball.x)}, ${Math.round(this.gameState.ball.y)})`);
+                    // Use the currently rendered state (supports practice mode)
+                    const ball = (stateToRender && stateToRender.ball)
+                        ? `(${Math.round(stateToRender.ball.x)}, ${Math.round(stateToRender.ball.y)})`
+                        : 'n/a';
+                    console.log(`📊 Loop FPS: ${fps} | Renders: ${renderCount} | Ball: ${ball}`);
                     frameCount = 0;
                     renderCount = 0;
                     lastFpsTime = now;
