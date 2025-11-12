@@ -878,14 +878,17 @@ class NetPongClient {
         this.updateConnectionStatus('PRACTICE MODE', true);
         this.startGameLoop();
         
-        // Start practice game loop
-        this.practiceGameLoop();
+        // Start practice game loop with requestAnimationFrame
+        requestAnimationFrame((timestamp) => this.practiceGameLoop(timestamp));
         
         console.log('✅ Practice game loop started');
     }
     
     practiceGameLoop(timestamp) {
         if (!this.practiceMode) return;
+        
+        // Ensure timestamp is valid
+        if (!timestamp) timestamp = performance.now();
         
         const CANVAS_WIDTH = 800;
         const CANVAS_HEIGHT = 600;
