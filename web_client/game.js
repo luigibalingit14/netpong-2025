@@ -32,6 +32,14 @@ class NetPongClient {
     this.aiDifficulty = 0.7; // 0-1, higher is harder
     this.localGameState = null; // For practice mode
     this.lastMode = 'menu'; // 'menu' | 'practice' | 'multiplayer'
+
+        // Swipe (trackpad-style) control state
+        this.swipe = {
+            active: false,
+            speed: 1,        // multiplier 1..3
+            lastY: 0,
+            lastTime: 0
+        };
         
         // Rendering state
         this.lastRenderTime = 0;
@@ -228,7 +236,7 @@ class NetPongClient {
         // Show mobile controls if mobile device
         if (this.isMobile) {
             mobileControls.style.display = 'flex';
-            controlsText.textContent = 'CONTROLS: Touch buttons to move';
+            controlsText.textContent = 'CONTROLS: Swipe up/down or use buttons';
         } else {
             mobileControls.style.display = 'none';
             controlsText.textContent = 'CONTROLS: Arrow keys ↑ ↓ to move';
@@ -296,6 +304,74 @@ class NetPongClient {
             this.keys['ArrowDown'] = false;
             this.updateInput();
         });
+
+        // --- Swipe Velocity Control on Canvas (option #4) ---
+        const canvas = this.canvas;
+        const getTouch = (e) => (e.touches && e.touches[0]) || (e.changedTouches && e.changedTouches[0]);
+        const DEADZONE = 0.15;     // px/ms threshold for direction
+        const SCALE = 2.5;         // velocity to speed multiplier mapping
+        const MAX_SPEED = 3.0;     // cap multiplier
+
+        const inRightHalf = (clientX) => {
+            const rect = canvas.getBoundingClientRect();
+            return clientX >= rect.left + rect.width / 2 && clientX <= rect.right && clientX >= 0 && clientX <= window.innerWidth;
+        };
+
+        const sendDirectionIfNeeded = (dir) => {
+            if (dir !== this.currentInput) {
+                this.currentInput = dir;
+                if (!this.practiceMode && this.ws && this.ws.readyState === WebSocket.OPEN) {
+                    this.send({ type: 'paddle_input', direction: dir });
+                }
+            }
+        };
+
+        canvas.addEventListener('touchstart', (e) => {
+            if (!this.isMobile) return;
+            const t = getTouch(e);
+            if (!t) return;
+            if (!inRightHalf(t.clientX)) return; // only use right half
+            e.preventDefault();
+            this.swipe.active = true;
+            this.swipe.lastY = t.clientY;
+            this.swipe.lastTime = e.timeStamp;
+            this.swipe.speed = 1;
+        }, { passive: false });
+
+        canvas.addEventListener('touchmove', (e) => {
+            if (!this.swipe.active) return;
+            const t = getTouch(e);
+            if (!t) return;
+            e.preventDefault();
+            const dy = t.clientY - this.swipe.lastY; // +down, -up
+            const dt = Math.max(1, e.timeStamp - this.swipe.lastTime);
+            const vel = dy / dt; // px per ms
+
+            // Direction with deadzone
+            let dir = 0;
+            if (Math.abs(vel) > DEADZONE) {
+                dir = vel > 0 ? 1 : -1; // down or up
+            }
+            sendDirectionIfNeeded(dir);
+
+            // Speed multiplier based on swipe velocity
+            const mag = Math.max(0, Math.abs(vel) - DEADZONE);
+            const speed = Math.min(1 + mag * SCALE, MAX_SPEED);
+            this.swipe.speed = isFinite(speed) ? speed : 1;
+
+            this.swipe.lastY = t.clientY;
+            this.swipe.lastTime = e.timeStamp;
+        }, { passive: false });
+
+        const endSwipe = (e) => {
+            if (!this.swipe.active) return;
+            e.preventDefault();
+            this.swipe.active = false;
+            this.swipe.speed = 1;
+            sendDirectionIfNeeded(0);
+        };
+        canvas.addEventListener('touchend', endSwipe, { passive: false });
+        canvas.addEventListener('touchcancel', endSwipe, { passive: false });
     }
     
     // ===== WEBSOCKET =====
@@ -1013,8 +1089,10 @@ class NetPongClient {
         
         // Update player paddle
         const player = state.players[0];
+        const speedMultiplier = (this.swipe && this.swipe.active) ? this.swipe.speed : 1;
+        const effectiveSpeed = PADDLE_SPEED * speedMultiplier;
         if (this.currentInput !== 0) {
-            player.y += this.currentInput * PADDLE_SPEED;
+            player.y += this.currentInput * effectiveSpeed;
             player.y = Math.max(PADDLE_HEIGHT/2, Math.min(CANVAS_HEIGHT - PADDLE_HEIGHT/2, player.y));
         }
         player.paddle_y = player.y;  // Always sync for render (CRITICAL!)
