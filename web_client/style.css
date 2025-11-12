@@ -422,43 +422,62 @@ body {
     font-size: 0.8rem;
 }
 
-/* Mobile Touch Controls */
+/* Mobile Touch Controls - Navigation Dock Style */
 .mobile-controls {
     position: fixed;
     bottom: 20px;
-    right: 20px;
+    left: 50%;
+    transform: translateX(-50%);
     display: none; /* Will be set by JS based on device */
     flex-direction: column;
-    gap: 10px;
+    gap: 12px;
     z-index: 1000;
+    /* Dock background */
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 2px solid rgba(0, 243, 255, 0.5);
+    border-radius: 25px;
+    padding: 15px 20px;
+    box-shadow: 
+        0 0 30px rgba(0, 243, 255, 0.4),
+        0 10px 40px rgba(0, 0, 0, 0.5),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
     /* Performance optimizations */
     will-change: transform;
-    transform: translateZ(0);
 }
 
 .mobile-btn {
-    width: 80px;
-    height: 80px;
-    background: rgba(0, 243, 255, 0.3);
-    border: 3px solid var(--neon-blue);
-    border-radius: 50%;
+    width: 70px;
+    height: 70px;
+    background: linear-gradient(135deg, rgba(0, 243, 255, 0.2), rgba(0, 243, 255, 0.4));
+    border: 2px solid var(--neon-blue);
+    border-radius: 15px;
     color: var(--neon-blue);
     font-size: 2rem;
     font-weight: bold;
     cursor: pointer;
     touch-action: manipulation;
     user-select: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     /* Use transform for better performance */
-    transition: transform 0.1s ease, background 0.1s ease;
-    box-shadow: 0 0 20px rgba(0, 243, 255, 0.5);
+    transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+    box-shadow: 
+        0 0 15px rgba(0, 243, 255, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
     /* Performance */
     will-change: transform;
     transform: translateZ(0);
 }
 
 .mobile-btn:active {
-    background: rgba(0, 243, 255, 0.7);
-    transform: scale(0.9) translateZ(0);
+    background: linear-gradient(135deg, rgba(0, 243, 255, 0.5), rgba(0, 243, 255, 0.7));
+    transform: scale(0.95) translateZ(0);
+    box-shadow: 
+        0 0 25px rgba(0, 243, 255, 0.6),
+        inset 0 2px 10px rgba(0, 243, 255, 0.3);
 }
 
 /* Show mobile controls in game screen */
@@ -514,8 +533,15 @@ body {
     }
     
     .mobile-controls {
-        bottom: 60px;
-        right: 15px;
+        bottom: 30px;
+        padding: 12px 18px;
+        border-radius: 22px;
+    }
+    
+    .mobile-btn {
+        width: 65px;
+        height: 65px;
+        font-size: 1.8rem;
     }
     
     /* Status indicator and sound button for tablet */
@@ -585,16 +611,18 @@ body {
         padding: 0.75rem 1.2rem;
     }
     
-    .mobile-btn {
-        width: 70px;
-        height: 70px;
-        font-size: 1.8rem;
+    .mobile-controls {
+        bottom: 15px;
+        padding: 10px 15px;
+        border-radius: 20px;
+        gap: 10px;
     }
     
-    .mobile-controls {
-        bottom: 40px;
-        right: 10px;
-        gap: 8px;
+    .mobile-btn {
+        width: 60px;
+        height: 60px;
+        font-size: 1.6rem;
+        border-radius: 12px;
     }
     
     .game-hud {
